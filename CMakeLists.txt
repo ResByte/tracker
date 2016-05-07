@@ -1,0 +1,6 @@
+cmake_minimum_required(VERSION 2.8)
+PROJECT( opencv_test )
+set(CMAKE_CXX_FLAGS "-std=c++11")
+FIND_PACKAGE(OpenCV REQUIRED)
+ADD_EXECUTABLE( video src/image_processor.cpp )
+TARGET_LINK_LIBRARIES(video ${OpenCV_LIBS})
