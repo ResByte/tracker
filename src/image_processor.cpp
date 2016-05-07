@@ -2,11 +2,8 @@
 
 
 /* 	computes hog feature from the given image
-		@params: greyscale image as input
-		@params: descriptor as vector float container
-		@params: sliding wndow size 
-		@params: training padding 
-		@params: locations  
+	@params: greyscale image as input
+
 */
 void ImageProcessor::computeHoG(cv::Mat& img)
 {

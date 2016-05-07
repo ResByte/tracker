@@ -66,5 +66,7 @@ public:
 	/* @brief: Constructor which initializes  */
 	Tracker(); 
 
+	ImageProcessor _im_p;
+
 
 };
