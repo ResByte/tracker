@@ -21,88 +21,14 @@
  * 
  */
 
-
-#include <iostream>
-#include "opencv2/core/core.hpp"
-#include "opencv2/flann/miniflann.hpp"
-#include "opencv2/imgproc/imgproc_c.h"
-#include "opencv2/imgproc/imgproc.hpp"
-#include "opencv2/video/video.hpp"
-#include "opencv2/features2d/features2d.hpp"
-#include "opencv2/objdetect/objdetect.hpp"
-#include "opencv2/calib3d/calib3d.hpp"
-#include "opencv2/ml/ml.hpp"
-#include "opencv2/highgui/highgui_c.h"
-#include "opencv2/highgui/highgui.hpp"
-#include "opencv2/contrib/contrib.hpp"
-
-class Tracker
-{
-public:	
-	/* This is the main tracker class from STAPLE. 
-	* 
-	* 
-	* TODO: 
-	*/ 
-	
-	struct params{
-	/* Parameters
-	 * 
-	 */
-		bool grayscale_sequence;
-		int hog_cell_size;
-		int fixed_area;
-		int n_bins;
-		float learning_rate_pwp;
-		int feature_type; // 0 if fhog , 1 if gray
-		float inner_padding;
-		float output_sigma_factor;
-		float lambda;
-		float learning_rate_cf;
-		float merge_factor;
-		int merge_method // 0 if const factor
-		bool den_per_channel;
-		
-		// scale related
-		bool scale_adaptation;
-		int hog_scale_cell_size;
-		float learning_rate_scale;
-		float scale_sigma_factor;
-		int num_scales;
-		float scale_model_factor;
-		float scale_step;
-		int scale_model_max_area;
-		
-	};
-
-
-	/* @brief: Constructor which initializes  */
-	Tracker(); 
-	
-	/* @brief: set Parameters */
-	void setParameters();
-
-	/* @brief: obtain image sub-window, padding is done by replicating border values.
-	* Returns sub-window of image IM centered at POS ([y, x] coordinates),
-	* with size MODEL_SZ ([height, width]). If any pixels are outside of the image,
-	* they will replicate the values at the borders 
-	*/
-	virtual cv::Mat getSubWindow(cv::Mat& img, int x, int y, int height, int width);
-
-	/* create new models for foreground and background or update the current ones */
-	virtual void updateHistModel();
-	
-	void hann();
-
-	params _parameter_config;
-
-};
+#include "tracker.hpp"
 
 Tracker::Tracker()
 {
 	
 }
 
+/*
 void Tracker::setParameters()
 {
 	_parameter_config.grayscale_sequence = false;	//suppose that sequence is colour
@@ -130,4 +56,12 @@ void Tracker::setParameters()
 	_parameter_config.scale_model_max_area = 32*16;
 
 	
-}	
+}
+*/	
+
+int main(int argc, char **argv)
+{
+	/* code */
+	Tracker track;
+	return 0;
+}

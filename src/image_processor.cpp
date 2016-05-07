@@ -1,78 +1,5 @@
-/*
- * image_processor.cpp
- * 
- * Copyright 2016 abhi <abhi@abhi-MacBookPro>
- * 
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
- * MA 02110-1301, USA.
- * 
- * 
- */
+#include "image_processor.hpp"
 
-
-#include <iostream>
-#include "opencv2/core/core.hpp"
-#include "opencv2/flann/miniflann.hpp"
-#include "opencv2/imgproc/imgproc_c.h"
-#include "opencv2/imgproc/imgproc.hpp"
-#include "opencv2/video/video.hpp"
-#include "opencv2/features2d/features2d.hpp"
-#include "opencv2/objdetect/objdetect.hpp"
-#include "opencv2/calib3d/calib3d.hpp"
-#include "opencv2/ml/ml.hpp"
-#include "opencv2/highgui/highgui_c.h"
-#include "opencv2/highgui/highgui.hpp"
-#include "opencv2/contrib/contrib.hpp"
-
-using namespace std;
-using namespace cv;
-
-class ImageProcessor
-{
-public:
-	ImageProcessor(){}	
-	
-	// reads image from file name 
-	// displays until the window is closed
-	void readImage();	
-	
-	// displays image untill shutdown
-	void showImage(cv::Mat im);
-	//sets filename 
-	void setFileName(std::string name);
-
-	
-	
-	// compute hog features from given image
-	void computeHoG(cv::Mat& img);
-
-	// convolves two arrays in frequency domain using dft
-	void convolveDFT(cv::Mat& A, cv::Mat& B, cv::Mat& output );
-
-	// get correlation filter for the image and patch
-	void correlationFilter(cv::Mat& img, cv::Mat& filter, cv::Mat& output); 
-
-	// extract subimage from the given image
-	void extractRect(cv::Mat& input, cv::Mat& output);
-
-
-
-	std::string _filename;
-	cv::Mat _image;
-	cv::HOGDescriptor _hog;
-};
 
 /* 	computes hog feature from the given image
 		@params: greyscale image as input
@@ -102,15 +29,22 @@ void ImageProcessor::computeHoG(cv::Mat& img)
 	// }
 }
 
-void ImageProcessor::extractRect(cv::Mat& input, cv::Mat& output)
+/*	computes rectangular ROI from given image
+	@params: x,y coordinate of upper left corner of rectangle
+	@params: width, height of rectangle from given coordinates
+*/
+void ImageProcessor::extractRect(cv::Mat& input, cv::Mat& output, int x, int y, int width, int height)
 {
 	// values are for object in the first image from ground truth file. 
-	cv::Mat subimage(input, cv::Rect(243,165,110 ,115 ));
+	cv::Mat subimage(input, cv::Rect(x,y,width,height));
 	showImage(subimage);
 	subimage.copyTo(output);
 
 }
 
+/*	displays image as an output untill a key is pressed
+	@params: image as input
+*/
 void ImageProcessor::showImage(cv::Mat im)
 {
 	cv::namedWindow("Display", cv::WINDOW_AUTOSIZE);
@@ -118,20 +52,29 @@ void ImageProcessor::showImage(cv::Mat im)
 	cv::waitKey(0);	
 }
 
-void ImageProcessor::readImage()
+/*	reads image from the set filename
+	@params: filename with path
+*/
+void ImageProcessor::readImage(std::string filename)
 {
-	_image  = cv::imread(_filename, CV_LOAD_IMAGE_COLOR);	
+	_image  = cv::imread(filename, CV_LOAD_IMAGE_COLOR);	
 }
 
+/*	set global filename of the input image
+	@params: input image filename with path
+*/
 void ImageProcessor::setFileName(std::string name)
 {
 	_filename = name;
 }
 
 
-// from opencv documentation
-// convolves 2 input images in frequency domain 
-// returns the result in spatial domain
+/* 	convolves 2 input images in frequency domain 
+ 	returns the result in spatial domain
+ 	@params: input image first as A
+ 	@params: input image second as B
+ 	@params: resulting output image 
+*/
 void ImageProcessor::convolveDFT(cv::Mat& A, cv::Mat& B, cv::Mat& output)
 {
 	output.create(abs(A.rows - B.rows)+1, abs(A.cols - B.cols) +1, A.type());
@@ -168,14 +111,18 @@ void ImageProcessor::convolveDFT(cv::Mat& A, cv::Mat& B, cv::Mat& output)
 
 }
 
-// filters an image in the frquency domain
-// computes fourier transform of image and filter
-// multiply in frequency domain
-// outputs the result by taking inverse transform of product
+/* 	filters an image in the frquency domain
+ 	computes fourier transform of image and filter
+ 	multiply in frequency domain
+ 	outputs the result by taking inverse transform of product
+	@params: input image as im
+	@params: input filter
+	@params: resulting output image
+
+	@TODO: perform check before input
+*/
 void ImageProcessor::correlationFilter(cv::Mat& im, cv::Mat& filter, cv::Mat& output)
 {
-	// TODO: perform checks
-
 	// using convolve dft 
 	convolveDFT(im, filter,output);
 }
@@ -185,9 +132,9 @@ int main(int argc, char **argv)
 {
 	ImageProcessor processor;
 	processor.setFileName(argv[1]);
-	processor.readImage();
+	processor.readImage(argv[1]);
 	cv::Mat sub;
-	processor.extractRect(processor._image, sub);
+	processor.extractRect(processor._image, sub, 243,165,110 ,115);
 	//processor.computeHoG(processor._image);
 	return 0;
 }
