@@ -50,18 +50,31 @@ public:
 	// displays until the window is closed
 	void readImage(std::string filename);	
 	
+	//resize image to fixed size
+	void resizeImg(cv::Mat& in, cv::Mat& out);
+
+	// create gaussian kernel 
+	cv::Mat createGaussian();
+
 	// displays image untill shutdown
 	void showImage(cv::Mat im);
 	//sets filename 
 	void setFileName(std::string name);
 
-	
-	
+	// set previous image
+	void initializeImages(std::string filename);	
+
+	// set current Image from file
+	void setCurrentImage(std::string filename);	
+
 	// compute hog features from given image
 	void computeHoG(cv::Mat& img);
 
 	// convolves two arrays in frequency domain using dft
 	void convolveDFT(cv::Mat& A, cv::Mat& B, cv::Mat& output );
+
+	// convolves 2 matrices in frquency domain and returns in frequency domain
+	cv::Mat convolveDFTSpectrum(cv::Mat& A, cv::Mat& B);
 
 	// get correlation filter for the image and patch
 	void correlationFilter(cv::Mat& img, cv::Mat& filter, cv::Mat& output); 
@@ -69,10 +82,17 @@ public:
 	// extract subimage from the given image
 	void extractRect(cv::Mat& input, cv::Mat& output, int x, int y, int width, int height);
 
+	// compute optimal correlation filter
+	void getOptimalCorrelationFilter(cv::Mat input);
 
+	// runs test algorithms
+	void run();
 
 	std::string _filename;
-	cv::Mat _image;
+	cv::Mat _prev_image;
+	cv::Mat _curr_image;
+	cv::Mat _prev_roi;
+	cv::Mat _curr_roi;
 	cv::HOGDescriptor _hog;
 };
 #endif /* _IMAGE_PROCESSOR_HPP */
