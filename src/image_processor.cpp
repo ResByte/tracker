@@ -225,6 +225,13 @@ void ImageProcessor::initializeImages(std::string filename)
 	_p.y = 165;
 	_p.w = 128;
 	_p.h = 128;
+
+	_prev_pos.x = 243 +115/2;
+	_prev_pos.y = 165 + 110/2;
+	// initialize scale
+	_prev_scale.w = 110;
+	_prev_scale.h = 115;
+
 }
 
 /*	Set current image from teh given filename
@@ -247,7 +254,12 @@ void ImageProcessor::initializeFilter(cv::Mat& y)
 
 }
 
-void ImageProcessor::computeH()
+/*	computes model H for the image
+	this is minimiser of the regularised objective
+	@params: precessed input patch.
+*/
+
+void ImageProcessor::computeH(cv::Mat& patch, ModelH& h_result)
 {
 	// 	calculate hog features for this image 
 	//	convert feature image from spatial domain to frequency domain
@@ -255,7 +267,7 @@ void ImageProcessor::computeH()
 	//computeHoG(_prev_roi, hog_feature_image);
 	
 	cv::Mat phi;
-	cv::cvtColor(_prev_roi, phi, CV_RGB2GRAY);
+	cv::cvtColor(patch, phi, CV_RGB2GRAY);
 	phi.convertTo(phi, CV_32FC1);
 	cv::Mat phi_hat;
 	cv::dft(phi,phi_hat, cv::DFT_COMPLEX_OUTPUT );
@@ -274,6 +286,9 @@ void ImageProcessor::computeH()
 	cv::Mat r_hat;
 	cv::mulSpectrums(y_hat, phi_hat, r_hat,0,true);
 
+	//update model
+	r_hat.copyTo(h_result.A);
+
 	cv::Mat reg_param = cv::Mat::eye(_p.w,_p.h,CV_32FC2);
 	reg_param *=_reg_param;
 
@@ -284,6 +299,8 @@ void ImageProcessor::computeH()
 
 	// get inverse of complex matrix
 	cv::Mat d_hat = s_hat + reg_param;
+	// model values
+	d_hat.copyTo(h_result.B);
 	std::vector<cv::Mat> components;
 	cv::split(d_hat, components);
 	cv::Mat real = components[0];
@@ -303,22 +320,20 @@ void ImageProcessor::computeH()
 	
 	cv::Mat h_hat;
 	cv::multiply(denominator, r_hat, h_hat);
+
+	// update model values
+	h_hat.copyTo(h_result.H);
+
+	// compute inverse of the filter
+	//cv::dft(h_hat, h_result, cv::DFT_INVERSE + cv::DFT_SCALE, d_hat.rows);
 }
 
 void ImageProcessor::run()
 {
 	initializeImages("../vot15_car1/imgs/00000001.jpg");
 	
-	computeH();
-
-	// std::cout<< y_hat.size()<<std::endl;
-	// std::cout<< phi_hat.size()<<std::endl;
-	// std::cout<< y_hat.type()<<std::endl;
-	// std::cout<< phi_hat.type()<<std::endl;
-	// multiply the spectrums to calculate r_hat
-	
-	// std::cout<< r_hat.type()<<std::endl;
-	// std::cout<< r_hat.size()<<std::endl;
+	ModelH h;	
+	computeH(_prev_roi,h);
 
 
 	

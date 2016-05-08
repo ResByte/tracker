@@ -45,13 +45,32 @@ class ImageProcessor
 {
 public:
 
-	struct position
+	struct Position
 	{
 		int x;	// coordinate of the upper left most corner
 		int y;
 		int w;	// width of the frame
 		int h;	// height of the frame
-	};	
+	};
+
+	struct Target
+	{
+		int x;
+		int y;
+	};
+
+	struct Scale
+	{
+		int w;
+		int h;
+	};
+
+	struct ModelH
+	{
+		cv::Mat A; 	// numerator in freq domain
+		cv::Mat B;	// denominator in freq domain
+		cv::Mat H; 	// model in freq domain
+	};
 
 	ImageProcessor()
 	{
@@ -105,10 +124,16 @@ public:
 	void initializeFilter(cv::Mat& y);
 
 	// computes model h 
-	void computeH();
+	void computeH(cv::Mat& patch, ModelH& h_result);
 
 	float _reg_param;
-	position _p;
+	Position _p;
+	Target _prev_pos;
+	Target _curr_pos;
+	Scale _prev_scale;
+	Scale _curr_scale;
+	ModelH _prev_h;
+	ModelH _curr_h;
 	int _fixed_patch_size; // every patch is resized to this before computing features
 	std::string _filename;
 	cv::Mat _prev_image;
