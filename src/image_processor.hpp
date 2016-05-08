@@ -76,6 +76,7 @@ public:
 	{
 		_fixed_patch_size = 128;
 		_reg_param = 0.01;
+		_learning_rate = 0.025;
 	}	
 	
 	// reads image from file name 
@@ -126,7 +127,11 @@ public:
 	// computes model h 
 	void computeH(cv::Mat& patch, ModelH& h_result);
 
+	// compute inverse of matrix having imaginery components
+	void getComplexInverse(cv::Mat& in, cv::Mat& out);
+
 	float _reg_param;
+	float _learning_rate;
 	Position _p;
 	Target _prev_pos;
 	Target _curr_pos;

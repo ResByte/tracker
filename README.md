@@ -11,4 +11,4 @@ To run the code
 * create build folder
 * cmake ..
 * make
-* ./image_processor $path_to_image
+* ./image_processor 

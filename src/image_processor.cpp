@@ -240,7 +240,7 @@ void ImageProcessor::initializeImages(std::string filename)
 void ImageProcessor::setCurrentImage(std::string filename)
 {
 	_curr_image = cv::imread(filename, CV_LOAD_IMAGE_COLOR);
-	showImage(_curr_image);
+	
 
 }
 
@@ -248,10 +248,35 @@ void ImageProcessor::initializeFilter(cv::Mat& y)
 {
 	y = cv::Mat::zeros(_p.w, _p.h, CV_32FC1);
 	y.at<float>(_p.w/2, _p.h/2) = 1.0f;
-	cv::GaussianBlur(y,y, cv::Size(-1,-1),2.0 );
+	cv::GaussianBlur(y,y, cv::Size(_p.w/16+1,_p.w/16+1),_p.w/16,0);
 	cv::normalize(y,y,cv::NORM_MINMAX);
 
 
+}
+
+/* 	computes inverse of matrix having imaginery components
+	@params: input complex image image 
+	@params: output complex image
+*/
+void ImageProcessor::getComplexInverse(cv::Mat& in, cv::Mat& out)
+{
+	std::vector<cv::Mat> components;
+	cv::split(in, components);
+	cv::Mat real = components[0];
+	cv::Mat imag = components[1];
+	cv::Mat twice(in.rows*2,in.cols*2, CV_32FC1);
+	real.copyTo(twice({0,0,in.cols,in.rows}));
+	real.copyTo(twice({in.cols,in.rows,in.cols,in.rows}));
+	imag.copyTo(twice({in.cols,0,in.cols,in.rows}));
+	cv::Mat(-imag).copyTo(twice({0,in.rows,in.cols,in.rows}));
+	
+	cv::Mat twice_inv = twice.inv();
+	twice_inv({0,0,in.cols,in.rows}).copyTo(real);
+	twice_inv({in.cols, 0, in.cols, in.rows}).copyTo(imag);
+
+	cv::Mat result(in.cols, in.rows, in.type());
+	cv::merge(components, result);
+	result.copyTo(out);
 }
 
 /*	computes model H for the image
@@ -292,34 +317,20 @@ void ImageProcessor::computeH(cv::Mat& patch, ModelH& h_result)
 	cv::Mat reg_param = cv::Mat::eye(_p.w,_p.h,CV_32FC2);
 	reg_param *=_reg_param;
 
-	std::cout<< reg_param.size()<<std::endl;
-	std::cout<< s_hat.size()<<std::endl;
-	std::cout<< reg_param.type()<<std::endl;
-	std::cout<< s_hat.type()<<std::endl;
+	// std::cout<< reg_param.size()<<std::endl;
+	// std::cout<< s_hat.size()<<std::endl;
+	// std::cout<< reg_param.type()<<std::endl;
+	// std::cout<< s_hat.type()<<std::endl;
 
 	// get inverse of complex matrix
 	cv::Mat d_hat = s_hat + reg_param;
 	// model values
 	d_hat.copyTo(h_result.B);
-	std::vector<cv::Mat> components;
-	cv::split(d_hat, components);
-	cv::Mat real = components[0];
-	cv::Mat imag = components[1];
-	cv::Mat twice(d_hat.rows*2,d_hat.cols*2, CV_32FC1);
-	real.copyTo(twice({0,0,d_hat.cols,d_hat.rows}));
-	real.copyTo(twice({d_hat.cols,d_hat.rows,d_hat.cols,d_hat.rows}));
-	imag.copyTo(twice({d_hat.cols,0,d_hat.cols,d_hat.rows}));
-	cv::Mat(-imag).copyTo(twice({0,d_hat.rows,d_hat.cols,d_hat.rows}));
-	
-	cv::Mat twice_inv = twice.inv();
-	twice_inv({0,0,d_hat.cols,d_hat.rows}).copyTo(real);
-	twice_inv({d_hat.cols, 0, d_hat.cols, d_hat.rows}).copyTo(imag);
-
 	cv::Mat denominator(d_hat.cols, d_hat.rows, d_hat.type());
-	cv::merge(components, denominator);
+	getComplexInverse(d_hat, denominator);
 	
 	cv::Mat h_hat;
-	cv::multiply(denominator, r_hat, h_hat);
+	cv::mulSpectrums(denominator, r_hat, h_hat,0,true);
 
 	// update model values
 	h_hat.copyTo(h_result.H);
@@ -331,12 +342,44 @@ void ImageProcessor::computeH(cv::Mat& patch, ModelH& h_result)
 void ImageProcessor::run()
 {
 	initializeImages("../vot15_car1/imgs/00000001.jpg");
-	
+	setCurrentImage("../vot15_car1/imgs/00000002.jpg");
+	//training
 	ModelH h;	
 	computeH(_prev_roi,h);
+	// Testing
+	// extract patch around the same area as previous
+	cv::Mat window;
+	extractRect(_curr_image, window, _p.x,_p.y,_prev_scale.w ,_prev_scale.h);
+	// resize the patch
+	cv::Mat resizedImg;
+	resizeImg(window,resizedImg);
 
+	// compute h model for current patch
+	ModelH curr_h; 
+	computeH(resizedImg,curr_h);
 
+	// estimate max y  using learning rate parameter
+	cv::Mat A_new = (1 - _learning_rate)*h.A + _learning_rate*curr_h.A;
+	cv::Mat B_new = (1 - _learning_rate)*h.B + _learning_rate*curr_h.B;
 	
+	cv::Mat B_inv;
+	getComplexInverse(B_new, B_inv);
+
+	// resulting update on current image 
+	cv::Mat res;
+	cv::mulSpectrums(B_inv, A_new, res,0, true);
+	// compute inverse of the filter
+	cv::dft(res,res, cv::DFT_INVERSE + cv::DFT_SCALE, A_new.rows);
+	
+	/*
+	cv::normalize(res,res,cv::NORM_MINMAX);
+	std::vector<cv::Mat> v;
+	cv::split(res,v);
+	std::cout<< res.size()<<std::endl;
+	std::cout<< res.type()<<std::endl;
+	//std::cout << "res = " << std::endl << " " <<res << std::endl << std::endl;
+	showImage(v[0]);
+	*/
 }
 
 int main(int argc, char **argv)
