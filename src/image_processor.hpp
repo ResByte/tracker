@@ -56,6 +56,7 @@ public:
 	ImageProcessor()
 	{
 		_fixed_patch_size = 128;
+		_reg_param = 0.01;
 	}	
 	
 	// reads image from file name 
@@ -103,7 +104,10 @@ public:
 	// initialize filter
 	void initializeFilter(cv::Mat& y);
 
-	
+	// computes model h 
+	void computeH();
+
+	float _reg_param;
 	position _p;
 	int _fixed_patch_size; // every patch is resized to this before computing features
 	std::string _filename;

@@ -247,11 +247,8 @@ void ImageProcessor::initializeFilter(cv::Mat& y)
 
 }
 
-
-void ImageProcessor::run()
+void ImageProcessor::computeH()
 {
-	initializeImages("../vot15_car1/imgs/00000001.jpg");
-	
 	// 	calculate hog features for this image 
 	//	convert feature image from spatial domain to frequency domain
 	//cv::Mat hog_feature_image;
@@ -276,6 +273,43 @@ void ImageProcessor::run()
 	// multiply the spectrums to calculate r_hat
 	cv::Mat r_hat;
 	cv::mulSpectrums(y_hat, phi_hat, r_hat,0,true);
+
+	cv::Mat reg_param = cv::Mat::eye(_p.w,_p.h,CV_32FC2);
+	reg_param *=_reg_param;
+
+	std::cout<< reg_param.size()<<std::endl;
+	std::cout<< s_hat.size()<<std::endl;
+	std::cout<< reg_param.type()<<std::endl;
+	std::cout<< s_hat.type()<<std::endl;
+
+	// get inverse of complex matrix
+	cv::Mat d_hat = s_hat + reg_param;
+	std::vector<cv::Mat> components;
+	cv::split(d_hat, components);
+	cv::Mat real = components[0];
+	cv::Mat imag = components[1];
+	cv::Mat twice(d_hat.rows*2,d_hat.cols*2, CV_32FC1);
+	real.copyTo(twice({0,0,d_hat.cols,d_hat.rows}));
+	real.copyTo(twice({d_hat.cols,d_hat.rows,d_hat.cols,d_hat.rows}));
+	imag.copyTo(twice({d_hat.cols,0,d_hat.cols,d_hat.rows}));
+	cv::Mat(-imag).copyTo(twice({0,d_hat.rows,d_hat.cols,d_hat.rows}));
+	
+	cv::Mat twice_inv = twice.inv();
+	twice_inv({0,0,d_hat.cols,d_hat.rows}).copyTo(real);
+	twice_inv({d_hat.cols, 0, d_hat.cols, d_hat.rows}).copyTo(imag);
+
+	cv::Mat denominator(d_hat.cols, d_hat.rows, d_hat.type());
+	cv::merge(components, denominator);
+	
+	cv::Mat h_hat;
+	cv::multiply(denominator, r_hat, h_hat);
+}
+
+void ImageProcessor::run()
+{
+	initializeImages("../vot15_car1/imgs/00000001.jpg");
+	
+	computeH();
 
 	// std::cout<< y_hat.size()<<std::endl;
 	// std::cout<< phi_hat.size()<<std::endl;
