@@ -5,7 +5,7 @@
 */
 void ImageProcessor::resizeImg(cv::Mat& in, cv::Mat& out)
 {
-	cv::resize(in, out, cv::Size(100,100), 0,0, cv::INTER_CUBIC );
+	cv::resize(in, out, cv::Size(_fixed_patch_size,_fixed_patch_size), 0,0, cv::INTER_CUBIC );
 }
 
 cv::Mat ImageProcessor::createGaussian()
@@ -16,9 +16,10 @@ cv::Mat ImageProcessor::createGaussian()
 
 /* 	computes hog feature from the given image
 	@params: greyscale image as input
+	@params: output feature image
 
 */
-void ImageProcessor::computeHoG(cv::Mat& img)
+void ImageProcessor::computeHoG(cv::Mat& img, cv::Mat& feature_image)
 {
 	cv::Mat im = img;
 	cv::cvtColor(im, im, CV_RGB2GRAY);
@@ -32,11 +33,15 @@ void ImageProcessor::computeHoG(cv::Mat& img)
 	//detection
 	_hog.detect(im, locs,0, cv::Size(4,4), cv::Size(0,0));
 
+	cv::Mat hog_features;
+	hog_features.create(desc.size(),1, CV_32FC1);
+
 	// To display the results uncomment following 
-	// for(auto i : desc )
-	// {
-	// 	std::cout<< i<<std::endl;
-	// }
+	for(auto i : desc )
+	{
+		hog_features.at<float>(i,0)=desc.at(i);
+	}
+	hog_features.copyTo(feature_image);
 }
 
 /*	computes rectangular ROI from given image
@@ -208,12 +213,12 @@ void ImageProcessor::correlationFilter(cv::Mat& im, cv::Mat& filter, cv::Mat& ou
 void ImageProcessor::initializeImages(std::string filename)
 {
 	_prev_image = cv::imread(filename, CV_LOAD_IMAGE_COLOR);	
-	extractRect(_prev_image, _prev_roi, 243,165,110 ,115);
-	//showImage(_prev_image);
-	//showImage(_prev_roi);
+	cv::Mat window;
+	extractRect(_prev_image, window, 243,165,110 ,115);
 	cv::Mat resizedImg;
-	resizeImg(_prev_roi,resizedImg);
+	resizeImg(window,resizedImg);
 	//showImage(resizedImg);
+	_prev_roi = resizedImg;
 }
 
 /*	Set current image from teh given filename
@@ -229,11 +234,12 @@ void ImageProcessor::setCurrentImage(std::string filename)
 void ImageProcessor::run()
 {
 	initializeImages("../vot15_car1/imgs/00000001.jpg");
-	std::cout<< _prev_roi.channels()<< std::endl;
 	
-	cv::Mat result ;
-	//getOptimalCorrelationFilter(_prev_image);
+	// calculate hog features for this image
+	cv::Mat hog_feature_image;
+	computeHoG(_prev_roi, hog_feature_image);
 
+	
 }
 
 int main(int argc, char **argv)

@@ -44,7 +44,10 @@ using namespace cv;
 class ImageProcessor
 {
 public:
-	ImageProcessor(){}	
+	ImageProcessor()
+	{
+		_fixed_patch_size = 128;
+	}	
 	
 	// reads image from file name 
 	// displays until the window is closed
@@ -68,7 +71,7 @@ public:
 	void setCurrentImage(std::string filename);	
 
 	// compute hog features from given image
-	void computeHoG(cv::Mat& img);
+	void computeHoG(cv::Mat& img, cv::Mat& feature_image);
 
 	// convolves two arrays in frequency domain using dft
 	void convolveDFT(cv::Mat& A, cv::Mat& B, cv::Mat& output );
@@ -88,6 +91,7 @@ public:
 	// runs test algorithms
 	void run();
 
+	int _fixed_patch_size; // every patch is resized to this before computing features
 	std::string _filename;
 	cv::Mat _prev_image;
 	cv::Mat _curr_image;
