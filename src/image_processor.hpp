@@ -130,6 +130,9 @@ public:
 	// compute inverse of matrix having imaginery components
 	void getComplexInverse(cv::Mat& in, cv::Mat& out);
 
+	// generate training sample
+	void createTrainingSample(std::vector<cv::Mat>& in, cv::Mat& sample);
+
 	float _reg_param;
 	float _learning_rate;
 	Position _p;

@@ -244,14 +244,13 @@ void ImageProcessor::setCurrentImage(std::string filename)
 
 }
 
+
 void ImageProcessor::initializeFilter(cv::Mat& y)
 {
 	y = cv::Mat::zeros(_p.w, _p.h, CV_32FC1);
 	y.at<float>(_p.w/2, _p.h/2) = 1.0f;
 	cv::GaussianBlur(y,y, cv::Size(_p.w/16+1,_p.w/16+1),_p.w/16,0);
 	cv::normalize(y,y,cv::NORM_MINMAX);
-
-
 }
 
 /* 	computes inverse of matrix having imaginery components
@@ -339,17 +338,52 @@ void ImageProcessor::computeH(cv::Mat& patch, ModelH& h_result)
 	//cv::dft(h_hat, h_result, cv::DFT_INVERSE + cv::DFT_SCALE, d_hat.rows);
 }
 
+void ImageProcessor::createTrainingSample(std::vector<cv::Mat>& in, cv::Mat& sample)
+{
+	cv::Point center = cv::Point(sample.cols/2,sample.rows/2);
+	double angle = 20.0;
+	double scale = 1.0;
+
+	Mat rot_mat( 2, 3, CV_32FC1 );
+	rot_mat = getRotationMatrix2D(center, angle, scale);
+	cv::Mat rotated;
+	
+	int i = 0;
+	while( i < 8)
+	{
+		rot_mat = getRotationMatrix2D(center, angle + ((float)i)*angle, scale);
+		cv::warpAffine(sample,rotated,rot_mat, sample.size(),cv::INTER_CUBIC );
+		in.push_back(rotated);
+		i++;
+	}
+
+}
+
 void ImageProcessor::run()
 {
 	initializeImages("../vot15_car1/imgs/00000001.jpg");
 	setCurrentImage("../vot15_car1/imgs/00000002.jpg");
+
+	std::vector<cv::Mat> training_samples;
+	createTrainingSample(training_samples, _prev_roi);
+
+	// for each sample compute model h 
+	std::vector<ModelH> training_models;
 	//training
-	ModelH h;	
-	computeH(_prev_roi,h);
+	for(auto i : training_samples)
+	{	
+		showImage(i);
+		ModelH h;	
+		computeH(i,h);
+		training_models.push_back(h);
+	}
+	
+	/*
 	// Testing
 	// extract patch around the same area as previous
 	cv::Mat window;
 	extractRect(_curr_image, window, _p.x,_p.y,_prev_scale.w ,_prev_scale.h);
+	showImage(window);
 	// resize the patch
 	cv::Mat resizedImg;
 	resizeImg(window,resizedImg);
@@ -370,7 +404,7 @@ void ImageProcessor::run()
 	cv::mulSpectrums(B_inv, A_new, res,0, true);
 	// compute inverse of the filter
 	cv::dft(res,res, cv::DFT_INVERSE + cv::DFT_SCALE, A_new.rows);
-	
+	*/
 	/*
 	cv::normalize(res,res,cv::NORM_MINMAX);
 	std::vector<cv::Mat> v;
