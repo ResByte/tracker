@@ -44,6 +44,15 @@ using namespace cv;
 class ImageProcessor
 {
 public:
+
+	struct position
+	{
+		int x;	// coordinate of the upper left most corner
+		int y;
+		int w;	// width of the frame
+		int h;	// height of the frame
+	};	
+
 	ImageProcessor()
 	{
 		_fixed_patch_size = 128;
@@ -91,6 +100,11 @@ public:
 	// runs test algorithms
 	void run();
 
+	// initialize filter
+	void initializeFilter(cv::Mat& y);
+
+	
+	position _p;
 	int _fixed_patch_size; // every patch is resized to this before computing features
 	std::string _filename;
 	cv::Mat _prev_image;

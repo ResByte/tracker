@@ -219,6 +219,12 @@ void ImageProcessor::initializeImages(std::string filename)
 	resizeImg(window,resizedImg);
 	//showImage(resizedImg);
 	_prev_roi = resizedImg;
+
+	// initialize position
+	_p.x = 243;
+	_p.y = 165;
+	_p.w = 128;
+	_p.h = 128;
 }
 
 /*	Set current image from teh given filename
@@ -231,13 +237,55 @@ void ImageProcessor::setCurrentImage(std::string filename)
 
 }
 
+void ImageProcessor::initializeFilter(cv::Mat& y)
+{
+	y = cv::Mat::zeros(_p.w, _p.h, CV_32FC1);
+	y.at<float>(_p.w/2, _p.h/2) = 1.0f;
+	cv::GaussianBlur(y,y, cv::Size(-1,-1),2.0 );
+	cv::normalize(y,y,cv::NORM_MINMAX);
+
+
+}
+
+
 void ImageProcessor::run()
 {
 	initializeImages("../vot15_car1/imgs/00000001.jpg");
 	
-	// calculate hog features for this image
-	cv::Mat hog_feature_image;
-	computeHoG(_prev_roi, hog_feature_image);
+	// 	calculate hog features for this image 
+	//	convert feature image from spatial domain to frequency domain
+	//cv::Mat hog_feature_image;
+	//computeHoG(_prev_roi, hog_feature_image);
+	
+	cv::Mat phi;
+	cv::cvtColor(_prev_roi, phi, CV_RGB2GRAY);
+	phi.convertTo(phi, CV_32FC1);
+	cv::Mat phi_hat;
+	cv::dft(phi,phi_hat, cv::DFT_COMPLEX_OUTPUT );
+
+	cv::Mat s_hat;
+	cv::mulSpectrums(phi_hat,phi_hat, s_hat, 0, true);
+
+	// initialize filter with gaussian
+	cv::Mat y;
+	initializeFilter(y);
+	//convert to dft
+	cv::Mat y_hat; 
+	cv::dft(y, y_hat, cv::DFT_COMPLEX_OUTPUT);
+
+	// multiply the spectrums to calculate r_hat
+	cv::Mat r_hat;
+	cv::mulSpectrums(y_hat, phi_hat, r_hat,0,true);
+
+	// std::cout<< y_hat.size()<<std::endl;
+	// std::cout<< phi_hat.size()<<std::endl;
+	// std::cout<< y_hat.type()<<std::endl;
+	// std::cout<< phi_hat.type()<<std::endl;
+	// multiply the spectrums to calculate r_hat
+	
+	// std::cout<< r_hat.type()<<std::endl;
+	// std::cout<< r_hat.size()<<std::endl;
+
 
 	
 }
