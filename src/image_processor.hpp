@@ -25,6 +25,7 @@
 
 
 #include <iostream>
+#include <string>
 #include "opencv2/core/core.hpp"
 #include "opencv2/flann/miniflann.hpp"
 #include "opencv2/imgproc/imgproc_c.h"
@@ -37,8 +38,14 @@
 #include "opencv2/highgui/highgui_c.h"
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/contrib/contrib.hpp"
-//#include "boost/filesystem.hpp"
-
+#define BOOST_NO_CXX11_SCOPED_ENUMS
+#include "boost/filesystem.hpp"
+#include "boost/filesystem/operations.hpp"
+#include "boost/filesystem/path.hpp"
+#include <boost/filesystem/convenience.hpp>
+#include <boost/foreach.hpp>
+#include <boost/range.hpp>
+#undef BOOST_NO_CXX11_SCOPED_ENUMS
 using namespace std;
 using namespace cv;
 

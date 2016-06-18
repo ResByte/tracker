@@ -36,11 +36,11 @@ void ImageProcessor::computeHoG(cv::Mat& img, cv::Mat& feature_image)
 	cv::Mat hog_features;
 	hog_features.create(desc.size(),1, CV_32FC1);
 
-	// To display the results uncomment following
-	for(auto i : desc )
-	{
-		hog_features.at<float>(i,0)=desc.at(i);
-	}
+	// // To display the results uncomment following
+	// for(auto i : desc )
+	// {
+	// 	hog_features.at<float>(i,0)=desc.at(i);
+	// }
 	hog_features.copyTo(feature_image);
 }
 
@@ -285,10 +285,7 @@ void ImageProcessor::getComplexInverse(cv::Mat& in, cv::Mat& out)
 
 void ImageProcessor::computeH(cv::Mat& img, ModelH& h_result)
 {
-	// 	calculate hog features for this image
-	//	convert feature image from spatial domain to frequency domain
-	//cv::Mat hog_feature_image;
-	//computeHoG(_prev_roi, hog_feature_image);
+
 	/* initialize with first frame */
 	//	extract patch x to a fixed size
 	cv::Mat resizedImg  = extractPatch(img);
@@ -316,7 +313,7 @@ void ImageProcessor::computeH(cv::Mat& img, ModelH& h_result)
 
 	//apply hann window before fourier transform
 	phi = phi*hann;
-	showImage(phi);
+	//showImage(phi);
 	// take fourier transform of feature image
 	cv::Mat phi_hat;
 	cv::dft(phi,phi_hat, cv::DFT_COMPLEX_OUTPUT );
@@ -330,16 +327,13 @@ void ImageProcessor::computeH(cv::Mat& img, ModelH& h_result)
 	cv::mulSpectrums(phi_hat,phi_hat, s_hat, 0, true);
 	//showResponseImage(s_hat);
 
-
-
-
 	// initialize model values
 	cv::Mat prev_h_num = r_hat;
 	cv::Mat d_hat = s_hat;
 	cv::Mat prev_h_den;
 	getComplexInverse(d_hat, prev_h_den);
 	cv::Mat prev_h = prev_h_den * prev_h_num;
-	showResponseImage(prev_h);
+	//showResponseImage(prev_h);
 
 }
 
@@ -392,6 +386,27 @@ cv::Mat ImageProcessor::extractPatch(cv::Mat& in)
 void ImageProcessor::readDir()
 {
 
+	std::map<int, string> mymap;
+	BOOST_FOREACH(boost::filesystem::path path,
+            boost::make_iterator_range(
+                boost::filesystem::recursive_directory_iterator(boost::filesystem::path("../vot15_car1/imgs")),
+                boost::filesystem::recursive_directory_iterator()))
+	{
+        std::string s =  path.filename().string();
+		std::stringstream ss(s);
+    	std::string item;
+    	std::vector<std::string> tokens;
+    	while (getline(ss, item, '.')) {
+         	tokens.push_back(item);
+
+    	}
+		std::string::size_type sz;
+		long i_auto = std::stol (tokens[0],&sz);
+		//std::cout<< tokens[0]<< ", "<<i_auto<<std::endl;
+		mymap[i_auto] = path.string();
+    }
+	//std::cout<<mymap.size();
+
 }
 
 // shows response spectrum image
@@ -416,73 +431,16 @@ void ImageProcessor::run()
 	//float prev_h_den = cv::trace(s_hat)[0];
 
 	// initialize rectangle
-	
-}
-
-/*
-void ImageProcessor::run()
-{
-	initializeImages("../vot15_car1/imgs/00000001.jpg");
-	setCurrentImage("../vot15_car1/imgs/00000002.jpg");
-
-	std::vector<cv::Mat> training_samples;
-	createTrainingSample(training_samples, _prev_roi);
-
-	// for each sample compute model h
-	std::vector<ModelH> training_models;
-	//training
-	for(auto i : training_samples)
-	{
-		showImage(i);
-		ModelH h;
-		computeH(i,h);
-		training_models.push_back(h);
-	}
-
-
-	// Testing
-	// extract patch around the same area as previous
-	cv::Mat window;
-	extractRect(_curr_image, window, _p.x,_p.y,_prev_scale.w ,_prev_scale.h);
-	showImage(window);
-	// resize the patch
-	cv::Mat resizedImg;
-	resizeImg(window,resizedImg);
-
-	// compute h model for current patch
-	ModelH curr_h;
-	computeH(resizedImg,curr_h);
-
-	// estimate max y  using learning rate parameter
-	cv::Mat A_new = (1 - _learning_rate)*h.A + _learning_rate*curr_h.A;
-	cv::Mat B_new = (1 - _learning_rate)*h.B + _learning_rate*curr_h.B;
-
-	cv::Mat B_inv;
-	getComplexInverse(B_new, B_inv);
-
-	// resulting update on current image
-	cv::Mat res;
-	cv::mulSpectrums(B_inv, A_new, res,0, true);
-	// compute inverse of the filter
-	cv::dft(res,res, cv::DFT_INVERSE + cv::DFT_SCALE, A_new.rows);
-	*/
-	/*
-	cv::normalize(res,res,cv::NORM_MINMAX);
-	std::vector<cv::Mat> v;
-	cv::split(res,v);
-	std::cout<< res.size()<<std::endl;
-	std::cout<< res.type()<<std::endl;
-	//std::cout << "res = " << std::endl << " " <<res << std::endl << std::endl;
-	showImage(v[0]);
 
 }
-*/
+
 int main(int argc, char **argv)
 {
 	ImageProcessor processor;
 
 	// processor.initializeImages("../vot15_car1/imgs/00000001.jpg");
 	// processor.setCurrentImage("../vot15_car1/imgs/00000002.jpg");
+	processor.readDir();
 	processor.run();
 
 	return 0;
