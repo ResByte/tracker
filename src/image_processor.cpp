@@ -26,8 +26,8 @@ void ImageProcessor::computeHoG(cv::Mat& img, cv::Mat& feature_image)
 	 // create hog descriptor
 	std::vector<float> desc; // create container to store descriptor
 	std::vector<cv::Point> locs; // store locations
-	
-	// computes desc from hog of window size 4,4 and padding of 0,0 
+
+	// computes desc from hog of window size 4,4 and padding of 0,0
 	_hog.compute(im, desc, cv::Size(4,4), cv::Size(0,0), locs);
 
 	//detection
@@ -36,7 +36,7 @@ void ImageProcessor::computeHoG(cv::Mat& img, cv::Mat& feature_image)
 	cv::Mat hog_features;
 	hog_features.create(desc.size(),1, CV_32FC1);
 
-	// To display the results uncomment following 
+	// To display the results uncomment following
 	for(auto i : desc )
 	{
 		hog_features.at<float>(i,0)=desc.at(i);
@@ -50,7 +50,7 @@ void ImageProcessor::computeHoG(cv::Mat& img, cv::Mat& feature_image)
 */
 void ImageProcessor::extractRect(cv::Mat& input, cv::Mat& output, int x, int y, int width, int height)
 {
-	// values are for object in the first image from ground truth file. 
+	// values are for object in the first image from ground truth file.
 	cv::Mat subimage(input, cv::Rect(x,y,width,height));
 	subimage.copyTo(output);
 
@@ -63,7 +63,7 @@ void ImageProcessor::showImage(cv::Mat im)
 {
 	cv::namedWindow("Display", cv::WINDOW_AUTOSIZE);
 	cv::imshow("Display", im);
-	cv::waitKey(0);	
+	cv::waitKey(0);
 }
 
 /*	reads image from the set filename
@@ -71,7 +71,7 @@ void ImageProcessor::showImage(cv::Mat im)
 */
 void ImageProcessor::readImage(std::string filename)
 {
-	_curr_image  = cv::imread(filename, CV_LOAD_IMAGE_COLOR);	
+	_curr_image  = cv::imread(filename, CV_LOAD_IMAGE_COLOR);
 }
 
 /*	set global filename of the input image
@@ -83,11 +83,11 @@ void ImageProcessor::setFileName(std::string name)
 }
 
 
-/* 	convolves 2 input images in frequency domain 
+/* 	convolves 2 input images in frequency domain
  	returns the result in spatial domain
  	@params: input image first as A
  	@params: input image second as B
- 	@params: resulting output image 
+ 	@params: resulting output image
 */
 void ImageProcessor::convolveDFT(cv::Mat& A, cv::Mat& B, cv::Mat& output)
 {
@@ -125,11 +125,11 @@ void ImageProcessor::convolveDFT(cv::Mat& A, cv::Mat& B, cv::Mat& output)
 
 }
 
-/* 	convolves 2 input images in frequency domain 
+/* 	convolves 2 input images in frequency domain
  	returns the result in frequency domain
  	@params: input image first as A
  	@params: input image second as B
- 	@params: return output image 
+ 	@params: return output image
 */
 cv::Mat ImageProcessor::convolveDFTSpectrum(cv::Mat& A, cv::Mat& B)
 {
@@ -186,7 +186,7 @@ void ImageProcessor::getOptimalCorrelationFilter(cv::Mat input)
 	cv::Mat r_hat =convolveDFTSpectrum(gauss_mat,grey);
 
 	// calculate current d_hat
-	
+
 }
 
 
@@ -203,7 +203,7 @@ void ImageProcessor::getOptimalCorrelationFilter(cv::Mat input)
 void ImageProcessor::correlationFilter(cv::Mat& im, cv::Mat& filter, cv::Mat& output)
 {
 
-	// using convolve dft 
+	// using convolve dft
 	convolveDFT(im, filter,output);
 }
 
@@ -212,7 +212,7 @@ void ImageProcessor::correlationFilter(cv::Mat& im, cv::Mat& filter, cv::Mat& ou
 */
 void ImageProcessor::initializeImages(std::string filename)
 {
-	_prev_image = cv::imread(filename, CV_LOAD_IMAGE_COLOR);	
+	_prev_image = cv::imread(filename, CV_LOAD_IMAGE_COLOR);
 	cv::Mat window;
 	extractRect(_prev_image, window, 243,165,110 ,115);
 	cv::Mat resizedImg;
@@ -240,7 +240,7 @@ void ImageProcessor::initializeImages(std::string filename)
 void ImageProcessor::setCurrentImage(std::string filename)
 {
 	_curr_image = cv::imread(filename, CV_LOAD_IMAGE_COLOR);
-	
+
 
 }
 
@@ -254,7 +254,7 @@ void ImageProcessor::initializeFilter(cv::Mat& y)
 }
 
 /* 	computes inverse of matrix having imaginery components
-	@params: input complex image image 
+	@params: input complex image image
 	@params: output complex image
 */
 void ImageProcessor::getComplexInverse(cv::Mat& in, cv::Mat& out)
@@ -268,7 +268,7 @@ void ImageProcessor::getComplexInverse(cv::Mat& in, cv::Mat& out)
 	real.copyTo(twice({in.cols,in.rows,in.cols,in.rows}));
 	imag.copyTo(twice({in.cols,0,in.cols,in.rows}));
 	cv::Mat(-imag).copyTo(twice({0,in.rows,in.cols,in.rows}));
-	
+
 	cv::Mat twice_inv = twice.inv();
 	twice_inv({0,0,in.cols,in.rows}).copyTo(real);
 	twice_inv({in.cols, 0, in.cols, in.rows}).copyTo(imag);
@@ -285,11 +285,11 @@ void ImageProcessor::getComplexInverse(cv::Mat& in, cv::Mat& out)
 
 void ImageProcessor::computeH(cv::Mat& patch, ModelH& h_result)
 {
-	// 	calculate hog features for this image 
+	// 	calculate hog features for this image
 	//	convert feature image from spatial domain to frequency domain
 	//cv::Mat hog_feature_image;
 	//computeHoG(_prev_roi, hog_feature_image);
-	
+
 	cv::Mat phi;
 	cv::cvtColor(patch, phi, CV_RGB2GRAY);
 	phi.convertTo(phi, CV_32FC1);
@@ -303,7 +303,7 @@ void ImageProcessor::computeH(cv::Mat& patch, ModelH& h_result)
 	cv::Mat y;
 	initializeFilter(y);
 	//convert to dft
-	cv::Mat y_hat; 
+	cv::Mat y_hat;
 	cv::dft(y, y_hat, cv::DFT_COMPLEX_OUTPUT);
 
 	// multiply the spectrums to calculate r_hat
@@ -327,7 +327,7 @@ void ImageProcessor::computeH(cv::Mat& patch, ModelH& h_result)
 	d_hat.copyTo(h_result.B);
 	cv::Mat denominator(d_hat.cols, d_hat.rows, d_hat.type());
 	getComplexInverse(d_hat, denominator);
-	
+
 	cv::Mat h_hat;
 	cv::mulSpectrums(denominator, r_hat, h_hat,0,true);
 
@@ -347,7 +347,7 @@ void ImageProcessor::createTrainingSample(std::vector<cv::Mat>& in, cv::Mat& sam
 	Mat rot_mat( 2, 3, CV_32FC1 );
 	rot_mat = getRotationMatrix2D(center, angle, scale);
 	cv::Mat rotated;
-	
+
 	int i = 0;
 	while( i < 8)
 	{
@@ -359,6 +359,34 @@ void ImageProcessor::createTrainingSample(std::vector<cv::Mat>& in, cv::Mat& sam
 
 }
 
+cv::Mat ImageProcessor::extractPatch(cv::Mat& in)
+{
+	// extract rectangle from the image with given dimension with no rotation
+	cv::Mat window;
+	extractRect(in, window, 243,165,110 ,115); // left most corner and width and height. taken heuristically
+	// resize the patch to a given dimension
+	cv::Mat resizedImg;
+	resizeImg(window,resizedImg);
+	return resizedImg;
+}
+
+// runs algorithm
+void ImageProcessor::run()
+{
+	// load image
+	_curr_image =  cv::imread("../vot15_car1/imgs/00000001.jpg", CV_LOAD_IMAGE_COLOR);
+
+	//	extract patch x
+	cv::Mat resizedImg  = extractPatch(_curr_image);
+
+	// 	create feature image phi
+
+	// 	apply hanning window
+
+
+}
+
+/*
 void ImageProcessor::run()
 {
 	initializeImages("../vot15_car1/imgs/00000001.jpg");
@@ -367,18 +395,18 @@ void ImageProcessor::run()
 	std::vector<cv::Mat> training_samples;
 	createTrainingSample(training_samples, _prev_roi);
 
-	// for each sample compute model h 
+	// for each sample compute model h
 	std::vector<ModelH> training_models;
 	//training
 	for(auto i : training_samples)
-	{	
+	{
 		showImage(i);
-		ModelH h;	
+		ModelH h;
 		computeH(i,h);
 		training_models.push_back(h);
 	}
-	
-	/*
+
+
 	// Testing
 	// extract patch around the same area as previous
 	cv::Mat window;
@@ -389,17 +417,17 @@ void ImageProcessor::run()
 	resizeImg(window,resizedImg);
 
 	// compute h model for current patch
-	ModelH curr_h; 
+	ModelH curr_h;
 	computeH(resizedImg,curr_h);
 
 	// estimate max y  using learning rate parameter
 	cv::Mat A_new = (1 - _learning_rate)*h.A + _learning_rate*curr_h.A;
 	cv::Mat B_new = (1 - _learning_rate)*h.B + _learning_rate*curr_h.B;
-	
+
 	cv::Mat B_inv;
 	getComplexInverse(B_new, B_inv);
 
-	// resulting update on current image 
+	// resulting update on current image
 	cv::Mat res;
 	cv::mulSpectrums(B_inv, A_new, res,0, true);
 	// compute inverse of the filter
@@ -413,17 +441,16 @@ void ImageProcessor::run()
 	std::cout<< res.type()<<std::endl;
 	//std::cout << "res = " << std::endl << " " <<res << std::endl << std::endl;
 	showImage(v[0]);
-	*/
-}
 
+}
+*/
 int main(int argc, char **argv)
 {
 	ImageProcessor processor;
-	
+
 	// processor.initializeImages("../vot15_car1/imgs/00000001.jpg");
 	// processor.setCurrentImage("../vot15_car1/imgs/00000002.jpg");
 	processor.run();
-	
+
 	return 0;
 }
-

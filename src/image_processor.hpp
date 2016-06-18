@@ -1,26 +1,26 @@
-#ifndef _IMAGE_PROCESSOR_HPP 
+#ifndef _IMAGE_PROCESSOR_HPP
 #define _IMAGE_PROCESSOR_HPP
 /*
  * image_processor.hpp
- * 
+ *
  * Copyright 2016 abhinav
- * 
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
  * MA 02110-1301, USA.
- * 
- * 
+ *
+ *
  */
 
 
@@ -74,31 +74,31 @@ public:
 
 	ImageProcessor()
 	{
-		_fixed_patch_size = 128;
+		_fixed_patch_size = 150;
 		_reg_param = 0.01;
 		_learning_rate = 0.025;
-	}	
-	
-	// reads image from file name 
+	}
+
+	// reads image from file name
 	// displays until the window is closed
-	void readImage(std::string filename);	
-	
+	void readImage(std::string filename);
+
 	//resize image to fixed size
 	void resizeImg(cv::Mat& in, cv::Mat& out);
 
-	// create gaussian kernel 
+	// create gaussian kernel
 	cv::Mat createGaussian();
 
 	// displays image untill shutdown
 	void showImage(cv::Mat im);
-	//sets filename 
+	//sets filename
 	void setFileName(std::string name);
 
 	// set previous image
-	void initializeImages(std::string filename);	
+	void initializeImages(std::string filename);
 
 	// set current Image from file
-	void setCurrentImage(std::string filename);	
+	void setCurrentImage(std::string filename);
 
 	// compute hog features from given image
 	void computeHoG(cv::Mat& img, cv::Mat& feature_image);
@@ -110,10 +110,13 @@ public:
 	cv::Mat convolveDFTSpectrum(cv::Mat& A, cv::Mat& B);
 
 	// get correlation filter for the image and patch
-	void correlationFilter(cv::Mat& img, cv::Mat& filter, cv::Mat& output); 
+	void correlationFilter(cv::Mat& img, cv::Mat& filter, cv::Mat& output);
 
 	// extract subimage from the given image
 	void extractRect(cv::Mat& input, cv::Mat& output, int x, int y, int width, int height);
+
+	// extracts a rectangular patch from the given image with pre-defined parameters
+	cv::Mat extractPatch(cv::Mat& in);
 
 	// compute optimal correlation filter
 	void getOptimalCorrelationFilter(cv::Mat input);
@@ -124,7 +127,7 @@ public:
 	// initialize filter
 	void initializeFilter(cv::Mat& y);
 
-	// computes model h 
+	// computes model h
 	void computeH(cv::Mat& patch, ModelH& h_result);
 
 	// compute inverse of matrix having imaginery components
