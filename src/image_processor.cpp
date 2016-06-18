@@ -389,7 +389,22 @@ void ImageProcessor::run()
 	cv::GaussianBlur(y,y, cv::Size(-1,-1),_fixed_patch_size/16,0);
 	cv::normalize(y,y,cv::NORM_MINMAX);
 
+	// compute dft for desired output response y
+	cv::Mat y_hat;
+	cv::dft(y,y_hat, cv::DFT_COMPLEX_OUTPUT );
+
+	// compute greyscale feature image
+	cv::Mat phi; // feature image (currently grayscale image)
+	cv::cvtColor(resizedImg, phi, CV_RGB2GRAY);
+	phi.convertTo(phi, CV_32FC1,1/255.0 );
+
+	// take fourier transform of feature image
+	cv::Mat phi_hat;
+	cv::dft(phi,phi_hat, cv::DFT_COMPLEX_OUTPUT );
+
 	
+
+
 
 
 }
