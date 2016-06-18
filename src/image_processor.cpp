@@ -376,12 +376,20 @@ void ImageProcessor::run()
 	// load image
 	_curr_image =  cv::imread("../vot15_car1/imgs/00000001.jpg", CV_LOAD_IMAGE_COLOR);
 
-	//	extract patch x
+	//	extract patch x to a fixed size
 	cv::Mat resizedImg  = extractPatch(_curr_image);
 
-	// 	create feature image phi
+	// 	create Hanning window
+	cv::Mat hann;
+	cv::createHanningWindow(hann, cv::Size(_fixed_patch_size, _fixed_patch_size), CV_32F);
 
-	// 	apply hanning window
+	// create desired output response y
+	cv::Mat y = cv::Mat::zeros(_fixed_patch_size, _fixed_patch_size, CV_32FC1);
+	y.at<float>(_fixed_patch_size/2, _fixed_patch_size/2) = 1.0f;
+	cv::GaussianBlur(y,y, cv::Size(-1,-1),_fixed_patch_size/16,0);
+	cv::normalize(y,y,cv::NORM_MINMAX);
+
+	
 
 
 }
