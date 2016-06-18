@@ -283,61 +283,70 @@ void ImageProcessor::getComplexInverse(cv::Mat& in, cv::Mat& out)
 	@params: precessed input patch.
 */
 
-void ImageProcessor::computeH(cv::Mat& patch, ModelH& h_result)
+void ImageProcessor::computeH(cv::Mat& img, ModelH& h_result)
 {
 	// 	calculate hog features for this image
 	//	convert feature image from spatial domain to frequency domain
 	//cv::Mat hog_feature_image;
 	//computeHoG(_prev_roi, hog_feature_image);
+	/* initialize with first frame */
+	//	extract patch x to a fixed size
+	cv::Mat resizedImg  = extractPatch(img);
+	//showImage(resizedImg);
+	// 	create Hanning window
+	cv::Mat hann;
+	cv::createHanningWindow(hann, cv::Size(_fixed_patch_size, _fixed_patch_size), CV_32F);
+	hann.convertTo(hann, CV_32FC1, 1/255.0);
 
-	cv::Mat phi;
-	cv::cvtColor(patch, phi, CV_RGB2GRAY);
-	phi.convertTo(phi, CV_32FC1);
+	// create desired output response y
+	cv::Mat y = cv::Mat::zeros(_fixed_patch_size, _fixed_patch_size, CV_32FC1);
+	y.at<float>(_fixed_patch_size/2, _fixed_patch_size/2) = 1.0f;
+	cv::GaussianBlur(y,y, cv::Size(-1,-1),_fixed_patch_size/16,0);
+	cv::normalize(y,y,cv::NORM_MINMAX);
+	//showImage(y);
+	// compute dft for desired output response y
+	cv::Mat y_hat;
+	cv::dft(y,y_hat, cv::DFT_COMPLEX_OUTPUT );
+
+	// compute greyscale feature image
+	cv::Mat phi; // feature image (currently grayscale image)
+	cv::cvtColor(resizedImg, phi, CV_RGB2GRAY);
+	cv::equalizeHist(phi, phi); // histogram equaizer for more contrast in image features
+	phi.convertTo(phi, CV_32FC1,1/255.0 );
+
+	//apply hann window before fourier transform
+	phi = phi*hann;
+	showImage(phi);
+	// take fourier transform of feature image
 	cv::Mat phi_hat;
 	cv::dft(phi,phi_hat, cv::DFT_COMPLEX_OUTPUT );
 
-	cv::Mat s_hat;
-	cv::mulSpectrums(phi_hat,phi_hat, s_hat, 0, true);
-
-	// initialize filter with gaussian
-	cv::Mat y;
-	initializeFilter(y);
-	//convert to dft
-	cv::Mat y_hat;
-	cv::dft(y, y_hat, cv::DFT_COMPLEX_OUTPUT);
-
-	// multiply the spectrums to calculate r_hat
+	// multiply the spectrums to calculate r_hat(numerator) of model
 	cv::Mat r_hat;
 	cv::mulSpectrums(y_hat, phi_hat, r_hat,0,true);
+	//showResponseImage(r_hat);
+	// multiply the spectrums to calculate s_hat
+	cv::Mat s_hat;
+	cv::mulSpectrums(phi_hat,phi_hat, s_hat, 0, true);
+	//showResponseImage(s_hat);
 
-	//update model
-	r_hat.copyTo(h_result.A);
 
-	cv::Mat reg_param = cv::Mat::eye(_p.w,_p.h,CV_32FC2);
-	reg_param *=_reg_param;
 
-	// std::cout<< reg_param.size()<<std::endl;
-	// std::cout<< s_hat.size()<<std::endl;
-	// std::cout<< reg_param.type()<<std::endl;
-	// std::cout<< s_hat.type()<<std::endl;
 
-	// get inverse of complex matrix
-	cv::Mat d_hat = s_hat + reg_param;
-	// model values
-	d_hat.copyTo(h_result.B);
-	cv::Mat denominator(d_hat.cols, d_hat.rows, d_hat.type());
-	getComplexInverse(d_hat, denominator);
+	// initialize model values
+	cv::Mat prev_h_num = r_hat;
+	cv::Mat d_hat = s_hat;
+	cv::Mat prev_h_den;
+	getComplexInverse(d_hat, prev_h_den);
+	cv::Mat prev_h = prev_h_den * prev_h_num;
+	showResponseImage(prev_h);
 
-	cv::Mat h_hat;
-	cv::mulSpectrums(denominator, r_hat, h_hat,0,true);
-
-	// update model values
-	h_hat.copyTo(h_result.H);
-
-	// compute inverse of the filter
-	//cv::dft(h_hat, h_result, cv::DFT_INVERSE + cv::DFT_SCALE, d_hat.rows);
 }
 
+/*	Creates Training samples by randomly rotating image
+	Used in MOSSE tracker
+	@params: vector to store results and input sample image
+*/
 void ImageProcessor::createTrainingSample(std::vector<cv::Mat>& in, cv::Mat& sample)
 {
 	cv::Point center = cv::Point(sample.cols/2,sample.rows/2);
@@ -359,54 +368,55 @@ void ImageProcessor::createTrainingSample(std::vector<cv::Mat>& in, cv::Mat& sam
 
 }
 
+// extracts patch of image for initialization
 cv::Mat ImageProcessor::extractPatch(cv::Mat& in)
 {
 	// extract rectangle from the image with given dimension with no rotation
+	int x1 = 243;
+	int y1 = 165;
+	int w = 110;
+	int h = 115;
+	int x = x1-(w/2);
+	int y = y1 - (h/2);
+	w = 2*w;
+	h = 2*h;
 	cv::Mat window;
-	extractRect(in, window, 243,165,110 ,115); // left most corner and width and height. taken heuristically
+	extractRect(in, window, x,y,w,h); // left most corner and width and height. taken heuristically
 	// resize the patch to a given dimension
 	cv::Mat resizedImg;
 	resizeImg(window,resizedImg);
 	return resizedImg;
 }
 
+// reads all image filenames in given directory
+void ImageProcessor::readDir()
+{
+
+}
+
+// shows response spectrum image
+void ImageProcessor::showResponseImage(cv::Mat& img)
+{
+	cv::Mat res;
+	cv::idft(img,res, cv::DFT_SCALE | cv::DFT_REAL_OUTPUT);
+	res.convertTo(res, CV_32FC1, 1/255.0 );
+	showImage(res);
+}
+
 // runs algorithm
 void ImageProcessor::run()
 {
 	// load image
-	_curr_image =  cv::imread("../vot15_car1/imgs/00000001.jpg", CV_LOAD_IMAGE_COLOR);
+	_prev_image =  cv::imread("../vot15_car1/imgs/00000001.jpg", CV_LOAD_IMAGE_COLOR);
+	_curr_image =  cv::imread("../vot15_car1/imgs/00000002.jpg", CV_LOAD_IMAGE_COLOR);
 
-	//	extract patch x to a fixed size
-	cv::Mat resizedImg  = extractPatch(_curr_image);
+	ModelH h;
+	computeH(_prev_image,h );
 
-	// 	create Hanning window
-	cv::Mat hann;
-	cv::createHanningWindow(hann, cv::Size(_fixed_patch_size, _fixed_patch_size), CV_32F);
+	//float prev_h_den = cv::trace(s_hat)[0];
 
-	// create desired output response y
-	cv::Mat y = cv::Mat::zeros(_fixed_patch_size, _fixed_patch_size, CV_32FC1);
-	y.at<float>(_fixed_patch_size/2, _fixed_patch_size/2) = 1.0f;
-	cv::GaussianBlur(y,y, cv::Size(-1,-1),_fixed_patch_size/16,0);
-	cv::normalize(y,y,cv::NORM_MINMAX);
-
-	// compute dft for desired output response y
-	cv::Mat y_hat;
-	cv::dft(y,y_hat, cv::DFT_COMPLEX_OUTPUT );
-
-	// compute greyscale feature image
-	cv::Mat phi; // feature image (currently grayscale image)
-	cv::cvtColor(resizedImg, phi, CV_RGB2GRAY);
-	phi.convertTo(phi, CV_32FC1,1/255.0 );
-
-	// take fourier transform of feature image
-	cv::Mat phi_hat;
-	cv::dft(phi,phi_hat, cv::DFT_COMPLEX_OUTPUT );
-
+	// initialize rectangle
 	
-
-
-
-
 }
 
 /*

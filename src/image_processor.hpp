@@ -37,6 +37,7 @@
 #include "opencv2/highgui/highgui_c.h"
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/contrib/contrib.hpp"
+//#include "boost/filesystem.hpp"
 
 using namespace std;
 using namespace cv;
@@ -79,6 +80,9 @@ public:
 		_learning_rate = 0.025;
 	}
 
+	// reads all file names in given directory
+	void readDir();
+
 	// reads image from file name
 	// displays until the window is closed
 	void readImage(std::string filename);
@@ -91,6 +95,10 @@ public:
 
 	// displays image untill shutdown
 	void showImage(cv::Mat im);
+
+	// show spectrum response image
+	void showResponseImage(cv::Mat& img);
+
 	//sets filename
 	void setFileName(std::string name);
 
@@ -128,7 +136,7 @@ public:
 	void initializeFilter(cv::Mat& y);
 
 	// computes model h
-	void computeH(cv::Mat& patch, ModelH& h_result);
+	void computeH(cv::Mat& img, ModelH& h_result);
 
 	// compute inverse of matrix having imaginery components
 	void getComplexInverse(cv::Mat& in, cv::Mat& out);
