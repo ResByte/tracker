@@ -356,6 +356,33 @@ void ImageProcessor::createTrainingSample(std::vector<cv::Mat>& in, cv::Mat& sam
 
 }
 
+// computes dft of given image and gives out resulting spectrum image
+void ImageProcessor::computeDFT(cv::Mat& in, cv::Mat& out)
+{
+	cv::Mat gray;
+	
+	int x = cv::getOptimalDFTSize(in.rows);
+	int y = cv::getOptimalDFTSize(in.cols);
+
+
+	copyMakeBorder(in,gray,0,x-in.rows,0,y-in.cols,BORDER_CONSTANT,Scalar::all(0));
+	in.copyTo(gray);
+	cv::cvtColor(gray, gray, CV_RGB2GRAY);
+	cv::equalizeHist(gray, gray); // histogram equaizer for more contrast in image features
+	gray.convertTo(gray, CV_32FC1,1/255.0 );
+
+	cv::normalize(gray, gray,  0.0, 1.0, cv::NORM_MINMAX);
+
+	cv::Mat hann;
+	cv::createHanningWindow(hann, gray.size(), CV_32F);
+	hann.convertTo(hann, CV_32FC1, 1/255.0);
+
+	cv::multiply(gray, hann, gray);
+	dft(gray, out, DFT_COMPLEX_OUTPUT);
+	out = out(cv::Rect(0, 0, out.cols & -2, out.rows & -2));
+}
+
+
 // extracts patch of image for initialization
 cv::Mat ImageProcessor::extractPatch(cv::Mat& in)
 {
@@ -423,6 +450,7 @@ void ImageProcessor::run()
 	cv::Mat prev_img, curr_img;
 	ModelH h_hat;
 	ModelH curr_h_hat;
+	cv::Mat phi_hat;
 	for( auto it : _data_map)
 	{
 		//std::cout<<it.first<<" "<<it.second<<std::endl;
@@ -431,8 +459,10 @@ void ImageProcessor::run()
 			curr_img = cv::imread(it.second, CV_LOAD_IMAGE_COLOR);
 			CV_Assert(curr_img.channels() == 1 || curr_img.channels() == 3);
 			cv::Mat resizedImg  = extractPatch(curr_img);
-			computeH(resizedImg, curr_h_hat);
 			
+			//computeH(resizedImg, curr_h_hat);
+			computeDFT(resizedImg, phi_hat);
+			std::cout<<"phit hat : "<<phi_hat.size()<< std::endl;
 			first = false;
 			//curr_img.copyTo(prev_img);
 
@@ -441,8 +471,10 @@ void ImageProcessor::run()
 		{
 			curr_img = cv::imread(it.second, CV_LOAD_IMAGE_COLOR);
 			cv::Mat resizedImg  = extractPatch(curr_img);
-			//std::cout<<resizedImg.size()<< std::endl;
-
+			std::cout<<"input image size: "<< resizedImg.size()<< std::endl;
+			computeDFT(resizedImg, phi_hat);
+			std::cout<<"phi hat size: "<< phi_hat.size()<< std::endl;
+			/*
 			// apply hann window before 
 			cv::Mat hann;
 			cv::createHanningWindow(hann, cv::Size(_fixed_patch_size, _fixed_patch_size), CV_32F);
@@ -488,6 +520,7 @@ void ImageProcessor::run()
 			std::cout<< minVal << ", "<< maxVal<< ", " << std::endl;
 			//showImage(res);
 			//computeH(resizedImg, curr_h_hat);
+			*/
 		}
 	}
 

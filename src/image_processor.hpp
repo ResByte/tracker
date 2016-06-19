@@ -150,6 +150,9 @@ public:
 	// generate training sample
 	void createTrainingSample(std::vector<cv::Mat>& in, cv::Mat& sample);
 
+	// computes DFT of given image
+	void computeDFT(cv::Mat& in, cv::Mat& out);
+
 	std::map<int, string> _data_map;
 	float _reg_param;
 	float _learning_rate;
