@@ -288,8 +288,9 @@ void ImageProcessor::computeH(cv::Mat& img, ModelH& h_result)
 
 	/* initialize with first frame */
 	//	extract patch x to a fixed size
-	cv::Mat resizedImg  = extractPatch(img);
-	//showImage(resizedImg);
+	cv::Mat resizedImg;
+	img.copyTo(resizedImg);
+
 	// 	create Hanning window
 	cv::Mat hann;
 	cv::createHanningWindow(hann, cv::Size(_fixed_patch_size, _fixed_patch_size), CV_32F);
@@ -300,7 +301,7 @@ void ImageProcessor::computeH(cv::Mat& img, ModelH& h_result)
 	y.at<float>(_fixed_patch_size/2, _fixed_patch_size/2) = 1.0f;
 	cv::GaussianBlur(y,y, cv::Size(-1,-1),_fixed_patch_size/16,0);
 	cv::normalize(y,y,cv::NORM_MINMAX);
-	//showImage(y);
+
 	// compute dft for desired output response y
 	cv::Mat y_hat;
 	cv::dft(y,y_hat, cv::DFT_COMPLEX_OUTPUT );
@@ -313,7 +314,7 @@ void ImageProcessor::computeH(cv::Mat& img, ModelH& h_result)
 
 	//apply hann window before fourier transform
 	phi = phi*hann;
-	//showImage(phi);
+
 	// take fourier transform of feature image
 	cv::Mat phi_hat;
 	cv::dft(phi,phi_hat, cv::DFT_COMPLEX_OUTPUT );
@@ -321,20 +322,13 @@ void ImageProcessor::computeH(cv::Mat& img, ModelH& h_result)
 	// multiply the spectrums to calculate r_hat(numerator) of model
 	cv::Mat r_hat;
 	cv::mulSpectrums(y_hat, phi_hat, r_hat,0,true);
-	//showResponseImage(r_hat);
+
 	// multiply the spectrums to calculate s_hat
 	cv::Mat s_hat;
 	cv::mulSpectrums(phi_hat,phi_hat, s_hat, 0, true);
-	//showResponseImage(s_hat);
 
-	// initialize model values
-	cv::Mat prev_h_num = r_hat;
-	cv::Mat d_hat = s_hat;
-	cv::Mat prev_h_den;
-	getComplexInverse(d_hat, prev_h_den);
-	cv::Mat prev_h = prev_h_den * prev_h_num;
-	//showResponseImage(prev_h);
-
+	r_hat.copyTo(h_result.r);
+	s_hat.copyTo(h_result.s);
 }
 
 /*	Creates Training samples by randomly rotating image
@@ -386,7 +380,7 @@ cv::Mat ImageProcessor::extractPatch(cv::Mat& in)
 void ImageProcessor::readDir()
 {
 
-	std::map<int, string> mymap;
+
 	BOOST_FOREACH(boost::filesystem::path path,
             boost::make_iterator_range(
                 boost::filesystem::recursive_directory_iterator(boost::filesystem::path("../vot15_car1/imgs")),
@@ -403,7 +397,7 @@ void ImageProcessor::readDir()
 		std::string::size_type sz;
 		long i_auto = std::stol (tokens[0],&sz);
 		//std::cout<< tokens[0]<< ", "<<i_auto<<std::endl;
-		mymap[i_auto] = path.string();
+		_data_map[i_auto] = path.string();
     }
 	//std::cout<<mymap.size();
 
@@ -422,15 +416,37 @@ void ImageProcessor::showResponseImage(cv::Mat& img)
 void ImageProcessor::run()
 {
 	// load image
-	_prev_image =  cv::imread("../vot15_car1/imgs/00000001.jpg", CV_LOAD_IMAGE_COLOR);
-	_curr_image =  cv::imread("../vot15_car1/imgs/00000002.jpg", CV_LOAD_IMAGE_COLOR);
+	//_prev_image =  cv::imread("../vot15_car1/imgs/00000001.jpg", CV_LOAD_IMAGE_COLOR);
+	//_curr_image =  cv::imread("../vot15_car1/imgs/00000002.jpg", CV_LOAD_IMAGE_COLOR);
 
-	ModelH h;
-	computeH(_prev_image,h );
+	readDir(); // read all data and store it to dictionary
 
-	//float prev_h_den = cv::trace(s_hat)[0];
+	// initialize parameters used in multiple iterations
+	bool first = true;
+	cv::Mat prev_img, curr_img;
+	ModelH h_hat;
+	ModelH curr_h_hat;
+	for( auto it : _data_map)
+	{
+		//std::cout<<it.first<<" "<<it.second<<std::endl;
+		if(first)
+		{
+			curr_img = cv::imread(it.second, CV_LOAD_IMAGE_COLOR);
+			cv::Mat resizedImg  = extractPatch(curr_img);
+			computeH(resizedImg, curr_h_hat);
+			
+			first = false;
+			//curr_img.copyTo(prev_img);
 
-	// initialize rectangle
+		}
+		else
+		{
+			curr_img = cv::imread(it.second, CV_LOAD_IMAGE_COLOR);
+			cv::Mat resizedImg  = extractPatch(curr_img);
+			computeH(resizedImg, curr_h_hat);
+		}
+	}
+
 
 }
 
@@ -440,7 +456,6 @@ int main(int argc, char **argv)
 
 	// processor.initializeImages("../vot15_car1/imgs/00000001.jpg");
 	// processor.setCurrentImage("../vot15_car1/imgs/00000002.jpg");
-	processor.readDir();
 	processor.run();
 
 	return 0;

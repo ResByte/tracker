@@ -38,14 +38,14 @@
 #include "opencv2/highgui/highgui_c.h"
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/contrib/contrib.hpp"
-#define BOOST_NO_CXX11_SCOPED_ENUMS
+
 #include "boost/filesystem.hpp"
 #include "boost/filesystem/operations.hpp"
 #include "boost/filesystem/path.hpp"
 #include <boost/filesystem/convenience.hpp>
 #include <boost/foreach.hpp>
 #include <boost/range.hpp>
-#undef BOOST_NO_CXX11_SCOPED_ENUMS
+
 using namespace std;
 using namespace cv;
 
@@ -75,9 +75,8 @@ public:
 
 	struct ModelH
 	{
-		cv::Mat A; 	// numerator in freq domain
-		cv::Mat B;	// denominator in freq domain
-		cv::Mat H; 	// model in freq domain
+		cv::Mat r; 	// r_hat in freq domain
+		cv::Mat s;	// s_hat in freq domain
 	};
 
 	ImageProcessor()
@@ -151,6 +150,7 @@ public:
 	// generate training sample
 	void createTrainingSample(std::vector<cv::Mat>& in, cv::Mat& sample);
 
+	std::map<int, string> _data_map;
 	float _reg_param;
 	float _learning_rate;
 	Position _p;
