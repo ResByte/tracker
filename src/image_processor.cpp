@@ -415,10 +415,7 @@ void ImageProcessor::showResponseImage(cv::Mat& img)
 // runs algorithm
 void ImageProcessor::run()
 {
-	// load image
-	//_prev_image =  cv::imread("../vot15_car1/imgs/00000001.jpg", CV_LOAD_IMAGE_COLOR);
-	//_curr_image =  cv::imread("../vot15_car1/imgs/00000002.jpg", CV_LOAD_IMAGE_COLOR);
-
+	
 	readDir(); // read all data and store it to dictionary
 
 	// initialize parameters used in multiple iterations
@@ -432,6 +429,7 @@ void ImageProcessor::run()
 		if(first)
 		{
 			curr_img = cv::imread(it.second, CV_LOAD_IMAGE_COLOR);
+			CV_Assert(curr_img.channels() == 1 || curr_img.channels() == 3);
 			cv::Mat resizedImg  = extractPatch(curr_img);
 			computeH(resizedImg, curr_h_hat);
 			
@@ -443,7 +441,39 @@ void ImageProcessor::run()
 		{
 			curr_img = cv::imread(it.second, CV_LOAD_IMAGE_COLOR);
 			cv::Mat resizedImg  = extractPatch(curr_img);
-			computeH(resizedImg, curr_h_hat);
+			std::cout<<resizedImg.size()<< std::endl;
+
+			// apply hann window before 
+			cv::Mat hann;
+			cv::createHanningWindow(hann, cv::Size(_fixed_patch_size, _fixed_patch_size), CV_32F);
+			hann.convertTo(hann, CV_32FC1, 1/255.0);
+
+			cv::Mat phi; // feature image (currently grayscale image)
+			cv::cvtColor(resizedImg, phi, CV_RGB2GRAY);
+			cv::equalizeHist(phi, phi); // histogram equaizer for more contrast in image features
+			//phi.convertTo(phi, CV_32FC1,1/255.0 );
+
+			//apply hann window before fourier transform
+			phi = phi*hann;
+			//showImage(phi);
+			// take fourier transform of feature image
+			cv::Mat phi_hat;
+			cv::dft(phi,phi_hat, cv::DFT_COMPLEX_OUTPUT );
+
+			// compute filter 
+			cv::Mat h = (1/(cv::trace(curr_h_hat.s)[0] + 1e-3))*curr_h_hat.r;
+
+			// compute response in frequency domain	
+			cv::Mat response_hat;
+			cv::mulSpectrums(h, phi_hat, response_hat,0,true);	
+			std::cout<< h.size()<< ", "<< h.type()<<std::endl;
+			//showResponseImage(response_hat);
+			//showResponseImage(response_hat);
+			cv::Mat res;
+			cv::idft(response_hat,res, cv::DFT_SCALE | cv::DFT_REAL_OUTPUT);
+			std::cout<< res.size()<< ", "<< res.type()<<std::endl;
+			//showImage(res);
+			//computeH(resizedImg, curr_h_hat);
 		}
 	}
 
