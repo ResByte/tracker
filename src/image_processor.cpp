@@ -361,15 +361,21 @@ void ImageProcessor::createTrainingSample(std::vector<cv::Mat>& in, cv::Mat& sam
 void ImageProcessor::preprocessImg(cv::Mat& img)
 {
 	// assumes single channel image
+	// pre-processing based on Mosse tracker
 	cv::cvtColor(img, img, CV_RGB2GRAY);
 	img.convertTo(img, CV_32FC1);
 	img+= cv::Scalar::all(1);
 	cv::log(img, img);
 	cv::Scalar mean, stddev;
 	cv::meanStdDev(img, mean,stddev);
-
 	img = img - mean[0];
 	img = img/(stddev[0] + 0.001);
+
+	// multiply by hann window before dft 
+	cv::Mat hann;
+	cv::createHanningWindow(hann, img.size(), CV_32F);
+	hann.convertTo(hann, CV_32FC1, 1/255.0);
+	cv::multiply(img, hann, img);
 }
 
 
