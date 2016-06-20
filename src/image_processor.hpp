@@ -105,6 +105,9 @@ public:
 	// show spectrum response image
 	void showResponseImage(cv::Mat& img);
 
+	// pre-process input image
+	void preprocessImg(cv::Mat& img);
+
 	//sets filename
 	void setFileName(std::string name);
 

@@ -356,6 +356,23 @@ void ImageProcessor::createTrainingSample(std::vector<cv::Mat>& in, cv::Mat& sam
 
 }
 
+// pre-processing input image 
+
+void ImageProcessor::preprocessImg(cv::Mat& img)
+{
+	// assumes single channel image
+	cv::cvtColor(img, img, CV_RGB2GRAY);
+	img.convertTo(img, CV_32FC1);
+	img+= cv::Scalar::all(1);
+	cv::log(img, img);
+	cv::Scalar mean, stddev;
+	cv::meanStdDev(img, mean,stddev);
+
+	img = img - mean[0];
+	img = img/(stddev[0] + 0.001);
+}
+
+
 // computes dft of given image and gives out resulting spectrum image
 void ImageProcessor::computeDFT(cv::Mat& in, cv::Mat& out)
 {
@@ -363,7 +380,7 @@ void ImageProcessor::computeDFT(cv::Mat& in, cv::Mat& out)
 	int x = cv::getOptimalDFTSize(in.rows);
 	int y = cv::getOptimalDFTSize(in.cols);
 
-	cv::cvtColor(in, in, CV_RGB2GRAY);
+	//cv::cvtColor(in, in, CV_RGB2GRAY);
 	cv::copyMakeBorder(in,gray,0,x-in.rows,0,y-in.cols,cv::BORDER_CONSTANT,cv::Scalar::all(0));
 	//in.copyTo(gray);
 	cv::Mat planes[] = {cv::Mat_<float>(gray), cv::Mat::zeros(gray.size(), CV_32FC1)};
@@ -478,6 +495,7 @@ void ImageProcessor::showResponseImage(cv::Mat& img)
 	showImage(res);
 }
 
+
 // runs algorithm
 void ImageProcessor::run()
 {
@@ -494,13 +512,17 @@ void ImageProcessor::run()
 		//std::cout<<it.first<<" "<<it.second<<std::endl;
 		if(it.first == 1)
 		{
+			// for the first frame initialize tracker 
 			curr_img = cv::imread(it.second, CV_LOAD_IMAGE_COLOR);
 			CV_Assert(curr_img.channels() == 1 || curr_img.channels() == 3);
-			cv::Mat resizedImg  = extractPatch(curr_img);
+			//cv::Mat resizedImg  = extractPatch(curr_img);
 			
+			std::cout << "prepocessing input image "<< std::endl;
+			preprocessImg(curr_img);
+
 			//computeH(resizedImg, curr_h_hat);
 			std::cout<< "computing DFT" << std::endl;
-			computeDFT(resizedImg, phi_hat);
+			computeDFT(curr_img, phi_hat);
 			std::cout<<"phit hat : "<<phi_hat.size()<< std::endl;
 			//curr_img.copyTo(prev_img);
 
@@ -510,7 +532,11 @@ void ImageProcessor::run()
 			curr_img = cv::imread(it.second, CV_LOAD_IMAGE_COLOR);
 			cv::Mat resizedImg  = extractPatch(curr_img);
 			std::cout<<"input image size: "<< resizedImg.size()<< std::endl;
-			computeDFT(resizedImg, phi_hat);
+
+			std::cout << "prepocessing input image "<< std::endl;
+			preprocessImg(curr_img);
+
+			computeDFT(curr_img, phi_hat);
 			std::cout<<"phi hat size: "<< phi_hat.size()<< std::endl;
 			/*
 			// apply hann window before 
