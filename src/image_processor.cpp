@@ -566,8 +566,8 @@ void ImageProcessor::run()
 			convolveDFT(y_hat, phi_hat, h_hat_num);
 			convolveDFT(phi_hat, phi_hat, h_hat_den);
 			// initialize position
-			cx = _p.x + _p.w/2;
-			cy = _p.y + _p.h/2;
+			cx = _fixed_patch_size/2;
+			cy = _fixed_patch_size/2;
 
 			//curr_img.copyTo(prev_img);
 
@@ -602,7 +602,7 @@ void ImageProcessor::run()
 			convolveDFT(phi_hat, h_hat, phi_hat_resp);
 
 			// compute max loc
-			 cv::Point maxLoc;
+			 cv::Point max_loc;
 			// cv::minMaxLoc(phi_hat, NULL, NULL, NULL, &maxLoc);
 
 			// compute inverse fourier transform
@@ -613,10 +613,26 @@ void ImageProcessor::run()
 			// resize 
 			//cv::resize(phi,phi, cv::Size(_p.w, _p.h));
 			//cv::Point maxLoc;
-			cv::minMaxLoc(phi, NULL, NULL, NULL, &maxLoc);
-			std::cout<< maxLoc.x<< ", "<< maxLoc.y<< std::endl;
+			cv::minMaxLoc(phi, NULL, NULL, NULL, &max_loc);
+			int xd = max_loc.x - cx ;
+			int yd = max_loc.y - cy;
 
+			std::cout<< max_loc.x<< ", "<< max_loc.y<< std::endl;
 
+			// filter update 
+			cv::Mat new_h_hat_num;
+			cv::Mat new_h_hat_den;
+			convolveDFT(y_hat, phi_hat, new_h_hat_num);
+			convolveDFT(phi_hat, phi_hat, new_h_hat_den);
+
+			h_hat_num = (1-_templ_learning_rate)*h_hat_num + _templ_learning_rate*new_h_hat_num;
+			h_hat_den = (1-_templ_learning_rate)*h_hat_den + _templ_learning_rate*new_h_hat_den;
+
+			// update rect position
+			_p.x +=xd;
+			_p.y +=yd;
+			cx += xd;
+			cy += yd; 
 			// compute max location
 
 			//showDFT(h_hat);

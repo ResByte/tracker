@@ -83,7 +83,7 @@ public:
 	{
 		_fixed_patch_size = 150;
 		_reg_param = 0.01;
-		_learning_rate = 0.025;
+		_templ_learning_rate = 0.01;
 		_p.x = 243;
 		_p.y = 165;
 		_p.w = 110;
@@ -168,7 +168,7 @@ public:
 
 	std::map<int, string> _data_map;
 	float _reg_param;
-	float _learning_rate;
+	float _templ_learning_rate;
 	Position _p;
 	Target _prev_pos;
 	Target _curr_pos;
