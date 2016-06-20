@@ -542,7 +542,7 @@ void ImageProcessor::run()
 	// compute dft for desired output response y
 	cv::Mat y_hat;
 	cv::dft(y,y_hat, cv::DFT_COMPLEX_OUTPUT );
-	showDFT(y_hat);
+	//showDFT(y_hat);
 	// main loop 
 	for( auto it : _data_map)
 	{
@@ -575,7 +575,12 @@ void ImageProcessor::run()
 		else
 		{
 			curr_img = cv::imread(it.second, CV_LOAD_IMAGE_COLOR);
-			cv::Mat resizedImg  = extractPatch(curr_img, _p);
+			Position new_p;
+			new_p.x = _p.x-(_p.w/2);
+			new_p.y = _p.y - (_p.h/2);
+			new_p.w = 2*_p.w;
+			new_p.h = 2*_p.h;
+			cv::Mat resizedImg  = extractPatch(curr_img, new_p);
 			std::cout<<"input image size: "<< resizedImg.size()<< std::endl;
 
 			std::cout << "prepocessing input image "<< std::endl;
@@ -591,6 +596,29 @@ void ImageProcessor::run()
 			// compute over filter 
 			cv::Mat h_hat;
 			spectrumDiv(h_hat_num, h_hat_den, h_hat);
+
+			// convolve regularized filter with current image and compute ifft 
+			cv::Mat phi_hat_resp;
+			convolveDFT(phi_hat, h_hat, phi_hat_resp);
+
+			// compute max loc
+			 cv::Point maxLoc;
+			// cv::minMaxLoc(phi_hat, NULL, NULL, NULL, &maxLoc);
+
+			// compute inverse fourier transform
+			cv::Mat phi;
+			cv::dft(phi_hat_resp, phi, DFT_INVERSE | DFT_REAL_OUTPUT);
+			cv::normalize(phi, phi, 0.0, 255.0, NORM_MINMAX);
+			showImage(phi);
+			// resize 
+			//cv::resize(phi,phi, cv::Size(_p.w, _p.h));
+			//cv::Point maxLoc;
+			cv::minMaxLoc(phi, NULL, NULL, NULL, &maxLoc);
+			std::cout<< maxLoc.x<< ", "<< maxLoc.y<< std::endl;
+
+
+			// compute max location
+
 			//showDFT(h_hat);
 
 			/*
