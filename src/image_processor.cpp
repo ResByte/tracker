@@ -91,38 +91,9 @@ void ImageProcessor::setFileName(std::string name)
 */
 void ImageProcessor::convolveDFT(cv::Mat& A, cv::Mat& B, cv::Mat& output)
 {
-	//output.create(abs(A.rows - B.rows)+1, abs(A.cols - B.cols) +1, A.type());
 
-	// calculates size of dft transform
-	// cv::Size dftSize;
-	// dftSize.width = cv::getOptimalDFTSize(A.cols + B.cols - 1);
-	// dftSize.height = cv::getOptimalDFTSize(A.rows + B.rows -1);
-
-	// // allocate a temporary buffer
-	// cv::Mat tempA(dftSize, A.type(),cv::Scalar::all(0));
-	// cv::Mat tempB(dftSize, B.type(),cv::Scalar::all(0));
-
-	// cv::Mat roiA(tempA, cv::Rect(0,0,A.cols, A.rows));
-	// A.copyTo(roiA);
-	// cv::Mat roiB(tempB, cv::Rect(0,0,B.cols, B.rows));
-	// B.copyTo(roiB);
-
-	// // transform
-	// cv::dft(tempA, tempA, 0, A.rows);
-	// cv::dft(tempB, tempB, 0, B.rows);
-
-	// multiply the spectrum
-	// flag is to set the first array's conjugate before multiplying
-	// default true
 	bool flag = true;
 	cv::mulSpectrums(A, B, output, flag);
-
-	// take inverse fourier transform
-	//cv::dft(tempA, tempA, cv::DFT_INVERSE + cv::DFT_SCALE, output.rows);
-
-	// copy the results to output
-	//tempA(cv::Rect(0,0,output.cols, output.rows)).copyTo(output);
-
 }
 
 /* 	convolves 2 input images in frequency domain
