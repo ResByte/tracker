@@ -360,13 +360,50 @@ void ImageProcessor::createTrainingSample(std::vector<cv::Mat>& in, cv::Mat& sam
 void ImageProcessor::computeDFT(cv::Mat& in, cv::Mat& out)
 {
 	cv::Mat gray;
-	
 	int x = cv::getOptimalDFTSize(in.rows);
 	int y = cv::getOptimalDFTSize(in.cols);
 
+	cv::cvtColor(in, in, CV_RGB2GRAY);
+	cv::copyMakeBorder(in,gray,0,x-in.rows,0,y-in.cols,cv::BORDER_CONSTANT,cv::Scalar::all(0));
+	//in.copyTo(gray);
+	cv::Mat planes[] = {cv::Mat_<float>(gray), cv::Mat::zeros(gray.size(), CV_32FC1)};
+	cv::Mat complexImg;
+	cv::merge(planes, 2, complexImg);
 
-	copyMakeBorder(in,gray,0,x-in.rows,0,y-in.cols,BORDER_CONSTANT,Scalar::all(0));
-	in.copyTo(gray);
+	dft(complexImg, complexImg);
+
+	// compute log(1 + sqrt(Re(DFT(img))**2 + Im(DFT(img))**2))
+	cv::split(complexImg, planes);
+	cv::magnitude(planes[0], planes[1], planes[0]);
+	cv::Mat mag = planes[0];
+	mag += cv::Scalar::all(1);
+	cv::log(mag, mag);
+
+	mag = mag(cv::Rect(0, 0, mag.cols & -2, mag.rows & -2));
+	int cx = mag.cols/2;
+	int cy = mag.rows/2;
+
+	// rearrange the quadrants of Fourier image
+	// so that the origin is at the image center
+	cv::Mat tmp;
+	cv::Mat q0(mag, Rect(0, 0, cx, cy));
+	cv::Mat q1(mag, Rect(cx, 0, cx, cy));
+	cv::Mat q2(mag, Rect(0, cy, cx, cy));
+	cv::Mat q3(mag, Rect(cx, cy, cx, cy));
+
+	q0.copyTo(tmp);
+	q3.copyTo(q0);
+	tmp.copyTo(q3);
+
+	q1.copyTo(tmp);
+	q2.copyTo(q1);
+	tmp.copyTo(q2);
+
+	cv::normalize(mag, mag, 0, 1, cv::NORM_MINMAX);
+
+	cv::imshow("spectrum magnitude", mag);
+	cv::waitKey(5);
+	/*
 	cv::cvtColor(gray, gray, CV_RGB2GRAY);
 	cv::equalizeHist(gray, gray); // histogram equaizer for more contrast in image features
 	gray.convertTo(gray, CV_32FC1,1/255.0 );
@@ -380,6 +417,8 @@ void ImageProcessor::computeDFT(cv::Mat& in, cv::Mat& out)
 	cv::multiply(gray, hann, gray);
 	dft(gray, out, DFT_COMPLEX_OUTPUT);
 	out = out(cv::Rect(0, 0, out.cols & -2, out.rows & -2));
+	*/
+	out = mag;
 }
 
 
@@ -446,7 +485,6 @@ void ImageProcessor::run()
 	readDir(); // read all data and store it to dictionary
 
 	// initialize parameters used in multiple iterations
-	bool first = true;
 	cv::Mat prev_img, curr_img;
 	ModelH h_hat;
 	ModelH curr_h_hat;
@@ -454,16 +492,16 @@ void ImageProcessor::run()
 	for( auto it : _data_map)
 	{
 		//std::cout<<it.first<<" "<<it.second<<std::endl;
-		if(first)
+		if(it.first == 1)
 		{
 			curr_img = cv::imread(it.second, CV_LOAD_IMAGE_COLOR);
 			CV_Assert(curr_img.channels() == 1 || curr_img.channels() == 3);
 			cv::Mat resizedImg  = extractPatch(curr_img);
 			
 			//computeH(resizedImg, curr_h_hat);
+			std::cout<< "computing DFT" << std::endl;
 			computeDFT(resizedImg, phi_hat);
 			std::cout<<"phit hat : "<<phi_hat.size()<< std::endl;
-			first = false;
 			//curr_img.copyTo(prev_img);
 
 		}
