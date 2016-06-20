@@ -91,37 +91,37 @@ void ImageProcessor::setFileName(std::string name)
 */
 void ImageProcessor::convolveDFT(cv::Mat& A, cv::Mat& B, cv::Mat& output)
 {
-	output.create(abs(A.rows - B.rows)+1, abs(A.cols - B.cols) +1, A.type());
+	//output.create(abs(A.rows - B.rows)+1, abs(A.cols - B.cols) +1, A.type());
 
 	// calculates size of dft transform
-	cv::Size dftSize;
-	dftSize.width = cv::getOptimalDFTSize(A.cols + B.cols - 1);
-	dftSize.height = cv::getOptimalDFTSize(A.rows + B.rows -1);
+	// cv::Size dftSize;
+	// dftSize.width = cv::getOptimalDFTSize(A.cols + B.cols - 1);
+	// dftSize.height = cv::getOptimalDFTSize(A.rows + B.rows -1);
 
-	// allocate a temporary buffer
-	cv::Mat tempA(dftSize, A.type(),cv::Scalar::all(0));
-	cv::Mat tempB(dftSize, B.type(),cv::Scalar::all(0));
+	// // allocate a temporary buffer
+	// cv::Mat tempA(dftSize, A.type(),cv::Scalar::all(0));
+	// cv::Mat tempB(dftSize, B.type(),cv::Scalar::all(0));
 
-	cv::Mat roiA(tempA, cv::Rect(0,0,A.cols, A.rows));
-	A.copyTo(roiA);
-	cv::Mat roiB(tempB, cv::Rect(0,0,B.cols, B.rows));
-	B.copyTo(roiB);
+	// cv::Mat roiA(tempA, cv::Rect(0,0,A.cols, A.rows));
+	// A.copyTo(roiA);
+	// cv::Mat roiB(tempB, cv::Rect(0,0,B.cols, B.rows));
+	// B.copyTo(roiB);
 
-	// transform
-	cv::dft(tempA, tempA, 0, A.rows);
-	cv::dft(tempB, tempB, 0, B.rows);
+	// // transform
+	// cv::dft(tempA, tempA, 0, A.rows);
+	// cv::dft(tempB, tempB, 0, B.rows);
 
 	// multiply the spectrum
 	// flag is to set the first array's conjugate before multiplying
 	// default true
 	bool flag = true;
-	cv::mulSpectrums(tempA, tempB, tempA, flag);
+	cv::mulSpectrums(A, B, output, flag);
 
 	// take inverse fourier transform
-	cv::dft(tempA, tempA, cv::DFT_INVERSE + cv::DFT_SCALE, output.rows);
+	//cv::dft(tempA, tempA, cv::DFT_INVERSE + cv::DFT_SCALE, output.rows);
 
 	// copy the results to output
-	tempA(cv::Rect(0,0,output.cols, output.rows)).copyTo(output);
+	//tempA(cv::Rect(0,0,output.cols, output.rows)).copyTo(output);
 
 }
 
@@ -394,8 +394,63 @@ void ImageProcessor::computeDFT(cv::Mat& in, cv::Mat& out)
 	cv::merge(planes, 2, complexImg);
 
 	dft(complexImg, complexImg);
+	out = complexImg.clone(); // output 
 
+	
+
+	
+}
+
+
+// extracts patch of image for initialization
+cv::Mat ImageProcessor::extractPatch(cv::Mat& in, Position& p)
+{
+	// extract rectangle from the image with given dimension with no rotation
+	int x1 = 243;
+	int y1 = 165;
+	int w = 110;
+	int h = 115;
+	int x = x1-(w/2);
+	int y = y1 - (h/2);
+	//w = 2*w;
+	//h = 2*h;
+	cv::Mat window;
+	extractRect(in, window, p.x,p.y,p.w,p.h); // left most corner and width and height. taken heuristically
+	// resize the patch to a given dimension
+	cv::Mat resizedImg;
+	resizeImg(window,resizedImg);
+	return resizedImg;
+}
+
+// reads all image filenames in given directory
+void ImageProcessor::readDir()
+{
+	BOOST_FOREACH(boost::filesystem::path path,
+            boost::make_iterator_range(
+                boost::filesystem::recursive_directory_iterator(boost::filesystem::path("../vot15_car1/imgs")),
+                boost::filesystem::recursive_directory_iterator()))
+	{
+        std::string s =  path.filename().string();
+		std::stringstream ss(s);
+    	std::string item;
+    	std::vector<std::string> tokens;
+    	while (getline(ss, item, '.')) {
+         	tokens.push_back(item);
+
+    	}
+		std::string::size_type sz;
+		long i_auto = std::stol (tokens[0],&sz);
+		//std::cout<< tokens[0]<< ", "<<i_auto<<std::endl;
+		_data_map[i_auto] = path.string();
+    }
+	//std::cout<<mymap.size();
+
+}
+
+void ImageProcessor::showDFT(cv::Mat& complexImg)
+{
 	// compute log(1 + sqrt(Re(DFT(img))**2 + Im(DFT(img))**2))
+	std::vector<cv::Mat> planes;
 	cv::split(complexImg, planes);
 	cv::magnitude(planes[0], planes[1], planes[0]);
 	cv::Mat mag = planes[0];
@@ -426,70 +481,6 @@ void ImageProcessor::computeDFT(cv::Mat& in, cv::Mat& out)
 
 	cv::imshow("spectrum magnitude", mag);
 	cv::waitKey(5);
-	/*
-	cv::cvtColor(gray, gray, CV_RGB2GRAY);
-	cv::equalizeHist(gray, gray); // histogram equaizer for more contrast in image features
-	gray.convertTo(gray, CV_32FC1,1/255.0 );
-
-	cv::normalize(gray, gray,  0.0, 1.0, cv::NORM_MINMAX);
-
-	cv::Mat hann;
-	cv::createHanningWindow(hann, gray.size(), CV_32F);
-	hann.convertTo(hann, CV_32FC1, 1/255.0);
-
-	cv::multiply(gray, hann, gray);
-	dft(gray, out, DFT_COMPLEX_OUTPUT);
-	out = out(cv::Rect(0, 0, out.cols & -2, out.rows & -2));
-	*/
-	out = mag;
-}
-
-
-// extracts patch of image for initialization
-cv::Mat ImageProcessor::extractPatch(cv::Mat& in)
-{
-	// extract rectangle from the image with given dimension with no rotation
-	int x1 = 243;
-	int y1 = 165;
-	int w = 110;
-	int h = 115;
-	int x = x1-(w/2);
-	int y = y1 - (h/2);
-	w = 2*w;
-	h = 2*h;
-	cv::Mat window;
-	extractRect(in, window, x,y,w,h); // left most corner and width and height. taken heuristically
-	// resize the patch to a given dimension
-	cv::Mat resizedImg;
-	resizeImg(window,resizedImg);
-	return resizedImg;
-}
-
-// reads all image filenames in given directory
-void ImageProcessor::readDir()
-{
-
-
-	BOOST_FOREACH(boost::filesystem::path path,
-            boost::make_iterator_range(
-                boost::filesystem::recursive_directory_iterator(boost::filesystem::path("../vot15_car1/imgs")),
-                boost::filesystem::recursive_directory_iterator()))
-	{
-        std::string s =  path.filename().string();
-		std::stringstream ss(s);
-    	std::string item;
-    	std::vector<std::string> tokens;
-    	while (getline(ss, item, '.')) {
-         	tokens.push_back(item);
-
-    	}
-		std::string::size_type sz;
-		long i_auto = std::stol (tokens[0],&sz);
-		//std::cout<< tokens[0]<< ", "<<i_auto<<std::endl;
-		_data_map[i_auto] = path.string();
-    }
-	//std::cout<<mymap.size();
-
 }
 
 // shows response spectrum image
@@ -501,6 +492,29 @@ void ImageProcessor::showResponseImage(cv::Mat& img)
 	showImage(res);
 }
 
+void ImageProcessor::spectrumDiv(cv::Mat& a, cv::Mat& b, cv::Mat& out)
+{
+	CV_Assert(a.size() == b.size());
+	out = cv::Mat::zeros(a.rows,a.cols,a.type());
+	// iterate over whole matrix and compute each element
+	for(int i = 0 ; i < a.rows; i++)
+	{
+		for(int j = 0; j < a.cols;j++)
+		{
+			out.at<cv::Vec2f>(i,j)[0] = ((a.at<cv::Vec2f>(i,j)[0]*b.at<cv::Vec2f>(i,j)[0]) + 
+										(a.at<cv::Vec2f>(i,j)[1]*b.at<cv::Vec2f>(i,j)[1])) / 
+										((b.at<cv::Vec2f>(i,j)[0]*b.at<cv::Vec2f>(i,j)[0]) + 
+										(b.at<cv::Vec2f>(i,j)[1]*b.at<cv::Vec2f>(i,j)[1])); 
+
+			out.at<cv::Vec2f>(i,j)[1] = ((a.at<cv::Vec2f>(i,j)[0]*b.at<cv::Vec2f>(i,j)[0]) - 
+										(a.at<cv::Vec2f>(i,j)[1]*b.at<cv::Vec2f>(i,j)[1])) / 
+										((b.at<cv::Vec2f>(i,j)[0]*b.at<cv::Vec2f>(i,j)[0]) + 
+										(b.at<cv::Vec2f>(i,j)[1]*b.at<cv::Vec2f>(i,j)[1])); 
+		}	
+	}	
+
+}
+
 
 // runs algorithm
 void ImageProcessor::run()
@@ -508,11 +522,28 @@ void ImageProcessor::run()
 	
 	readDir(); // read all data and store it to dictionary
 
+
+
 	// initialize parameters used in multiple iterations
 	cv::Mat prev_img, curr_img;
-	ModelH h_hat;
+	//ModelH h_hat;
 	ModelH curr_h_hat;
 	cv::Mat phi_hat;
+	cv::Mat h_hat_num;
+	cv::Mat h_hat_den;
+	int cx, cy; // postion of the object center
+	
+	// create desired output response y
+	cv::Mat y = cv::Mat::zeros(_fixed_patch_size, _fixed_patch_size, CV_32FC1);
+	y.at<float>(_fixed_patch_size/2, _fixed_patch_size/2) = 1.0f;
+	cv::GaussianBlur(y,y, cv::Size(-1,-1),_fixed_patch_size/16,0);
+	cv::normalize(y,y,cv::NORM_MINMAX);
+
+	// compute dft for desired output response y
+	cv::Mat y_hat;
+	cv::dft(y,y_hat, cv::DFT_COMPLEX_OUTPUT );
+	showDFT(y_hat);
+	// main loop 
 	for( auto it : _data_map)
 	{
 		//std::cout<<it.first<<" "<<it.second<<std::endl;
@@ -521,29 +552,47 @@ void ImageProcessor::run()
 			// for the first frame initialize tracker 
 			curr_img = cv::imread(it.second, CV_LOAD_IMAGE_COLOR);
 			CV_Assert(curr_img.channels() == 1 || curr_img.channels() == 3);
-			//cv::Mat resizedImg  = extractPatch(curr_img);
+			cv::Mat resizedImg  = extractPatch(curr_img, _p);
 			
 			std::cout << "prepocessing input image "<< std::endl;
-			preprocessImg(curr_img);
+			preprocessImg(resizedImg);
 
 			//computeH(resizedImg, curr_h_hat);
 			std::cout<< "computing DFT" << std::endl;
-			computeDFT(curr_img, phi_hat);
-			std::cout<<"phit hat : "<<phi_hat.size()<< std::endl;
+			computeDFT(resizedImg, phi_hat);
+			//showDFT(phi_hat);
+			std::cout<<"phi hat : "<<phi_hat.size()<< std::endl;
+
+			convolveDFT(y_hat, phi_hat, h_hat_num);
+			convolveDFT(phi_hat, phi_hat, h_hat_den);
+			// initialize position
+			cx = _p.x + _p.w/2;
+			cy = _p.y + _p.h/2;
+
 			//curr_img.copyTo(prev_img);
 
 		}
 		else
 		{
 			curr_img = cv::imread(it.second, CV_LOAD_IMAGE_COLOR);
-			cv::Mat resizedImg  = extractPatch(curr_img);
+			cv::Mat resizedImg  = extractPatch(curr_img, _p);
 			std::cout<<"input image size: "<< resizedImg.size()<< std::endl;
 
 			std::cout << "prepocessing input image "<< std::endl;
-			preprocessImg(curr_img);
+			preprocessImg(resizedImg);
 
-			computeDFT(curr_img, phi_hat);
+			computeDFT(resizedImg, phi_hat);
+			//showDFT(phi_hat);
 			std::cout<<"phi hat size: "<< phi_hat.size()<< std::endl;
+			// add lambda to denominator 
+			cv::Mat lambda = cv::Mat::eye(h_hat_den.size(), h_hat_den.type());
+			lambda = _reg_param*lambda;
+			h_hat_den += lambda;
+			// compute over filter 
+			cv::Mat h_hat;
+			spectrumDiv(h_hat_num, h_hat_den, h_hat);
+			//showDFT(h_hat);
+
 			/*
 			// apply hann window before 
 			cv::Mat hann;

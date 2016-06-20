@@ -84,6 +84,10 @@ public:
 		_fixed_patch_size = 150;
 		_reg_param = 0.01;
 		_learning_rate = 0.025;
+		_p.x = 243;
+		_p.y = 165;
+		_p.w = 110;
+		_p.h = 115;
 	}
 
 	// reads all file names in given directory
@@ -117,6 +121,9 @@ public:
 	// set current Image from file
 	void setCurrentImage(std::string filename);
 
+	// shows dft image 
+	void showDFT(cv::Mat& complexImg);
+
 	// compute hog features from given image
 	void computeHoG(cv::Mat& img, cv::Mat& feature_image);
 
@@ -133,7 +140,7 @@ public:
 	void extractRect(cv::Mat& input, cv::Mat& output, int x, int y, int width, int height);
 
 	// extracts a rectangular patch from the given image with pre-defined parameters
-	cv::Mat extractPatch(cv::Mat& in);
+	cv::Mat extractPatch(cv::Mat& in, Position& p);
 
 	// compute optimal correlation filter
 	void getOptimalCorrelationFilter(cv::Mat input);
@@ -143,6 +150,9 @@ public:
 
 	// initialize filter
 	void initializeFilter(cv::Mat& y);
+
+	// divides 2 spectrum in frequency domain
+	void spectrumDiv(cv::Mat& a, cv::Mat& b, cv::Mat& out);
 
 	// computes model h
 	void computeH(cv::Mat& img, ModelH& h_result);
