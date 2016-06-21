@@ -46,8 +46,6 @@
 #include <boost/foreach.hpp>
 #include <boost/range.hpp>
 
-using namespace std;
-using namespace cv;
 
 class ImageProcessor
 {
@@ -166,7 +164,7 @@ public:
 	// computes DFT of given image
 	void computeDFT(cv::Mat& in, cv::Mat& out);
 
-	std::map<int, string> _data_map;
+	std::map<int, std::string> _data_map;
 	float _reg_param;
 	float _templ_learning_rate;
 	Position _p;

@@ -7,10 +7,10 @@ void ImageProcessor::resizeImg(cv::Mat& in, cv::Mat& out)
 {
 	cv::resize(in, out, cv::Size(_fixed_patch_size,_fixed_patch_size), 0,0, cv::INTER_CUBIC );
 }
-
+// creates a gaussian kernel as defined in opencv 
 cv::Mat ImageProcessor::createGaussian()
 {
-	cv::Mat result = getGaussianKernel(51, 0.01, CV_32F);
+	cv::Mat result = cv::getGaussianKernel(51, 0.01, CV_32F);
 	return result;
 }
 
@@ -150,7 +150,7 @@ void ImageProcessor::getOptimalCorrelationFilter(cv::Mat input)
 	cv::cvtColor(grey, grey, CV_RGB2GRAY);
 
 	// create gaussian kernel for desired response
-	cv::Mat gauss_mat = getGaussianKernel(201, 100/16, CV_32F);
+	cv::Mat gauss_mat = cv::getGaussianKernel(201, 100/16, CV_32F);
 
 	// convlove previous roi with self and get frequency domain results
 	cv::Mat s_hat =convolveDFTSpectrum(grey,grey);
@@ -318,8 +318,8 @@ void ImageProcessor::createTrainingSample(std::vector<cv::Mat>& in, cv::Mat& sam
 	double angle = 20.0;
 	double scale = 1.0;
 
-	Mat rot_mat( 2, 3, CV_32FC1 );
-	rot_mat = getRotationMatrix2D(center, angle, scale);
+	cv::Mat rot_mat( 2, 3, CV_32FC1 );
+	rot_mat = cv::getRotationMatrix2D(center, angle, scale);
 	cv::Mat rotated;
 
 	int i = 0;
@@ -441,10 +441,10 @@ void ImageProcessor::showDFT(cv::Mat& complexImg)
 	// rearrange the quadrants of Fourier image
 	// so that the origin is at the image center
 	cv::Mat tmp;
-	cv::Mat q0(mag, Rect(0, 0, cx, cy));
-	cv::Mat q1(mag, Rect(cx, 0, cx, cy));
-	cv::Mat q2(mag, Rect(0, cy, cx, cy));
-	cv::Mat q3(mag, Rect(cx, cy, cx, cy));
+	cv::Mat q0(mag, cv::Rect(0, 0, cx, cy));
+	cv::Mat q1(mag, cv::Rect(cx, 0, cx, cy));
+	cv::Mat q2(mag, cv::Rect(0, cy, cx, cy));
+	cv::Mat q3(mag, cv::Rect(cx, cy, cx, cy));
 
 	q0.copyTo(tmp);
 	q3.copyTo(q0);
@@ -558,15 +558,18 @@ void ImageProcessor::run()
 			new_p.y = _p.y - (_p.h/2);
 			new_p.w = 2*_p.w;
 			new_p.h = 2*_p.h;
-			cv::Mat resizedImg  = extractPatch(curr_img, new_p);
-			std::cout<<"input image size: "<< resizedImg.size()<< std::endl;
 
-			std::cout << "prepocessing input image "<< std::endl;
+			// extract patch and resize it to a fixed size
+			cv::Mat resizedImg  = extractPatch(curr_img, new_p);
+			//std::cout<<"input image size: "<< resizedImg.size()<< std::endl;
+
+			//std::cout << "prepocessing input image "<< std::endl;
 			preprocessImg(resizedImg);
 
 			computeDFT(resizedImg, phi_hat);
 			//showDFT(phi_hat);
-			std::cout<<"phi hat size: "<< phi_hat.size()<< std::endl;
+			//std::cout<<"phi hat size: "<< phi_hat.size()<< std::endl;
+			
 			// add lambda to denominator 
 			cv::Mat lambda = cv::Mat::eye(h_hat_den.size(), h_hat_den.type());
 			lambda = _reg_param*lambda;
@@ -585,8 +588,8 @@ void ImageProcessor::run()
 
 			// compute inverse fourier transform
 			cv::Mat phi;
-			cv::dft(phi_hat_resp, phi, DFT_INVERSE | DFT_REAL_OUTPUT);
-			cv::normalize(phi, phi, 0.0, 255.0, NORM_MINMAX);
+			cv::dft(phi_hat_resp, phi, cv::DFT_INVERSE | cv::DFT_REAL_OUTPUT);
+			cv::normalize(phi, phi, 0.0, 255.0, cv::NORM_MINMAX);
 			showImage(phi);
 			
 			cv::minMaxLoc(phi, NULL, NULL, NULL, &max_loc);
