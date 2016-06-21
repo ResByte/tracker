@@ -1,4 +1,4 @@
-#include "image_processor.hpp"
+#include "tracker/image_processor.hpp"
 
 /*	reesizes image to fixed size
 	@params: input image and output image
@@ -138,7 +138,8 @@ cv::Mat ImageProcessor::convolveDFTSpectrum(cv::Mat& A, cv::Mat& B)
 /*	computes optimal correlation filter in frequency domain.
 	It solves least square error minimzation to compute optimal filter
 	for the given image desires output response is assumed gaussian with zero mean
-
+	@params: input image
+	@TODO: redundant
 */
 void ImageProcessor::getOptimalCorrelationFilter(cv::Mat input)
 {
@@ -169,7 +170,7 @@ void ImageProcessor::getOptimalCorrelationFilter(cv::Mat input)
 	@params: input filter
 	@params: resulting output image
 
-	@TODO: perform check before input
+	@TODO: redundant
 */
 void ImageProcessor::correlationFilter(cv::Mat& im, cv::Mat& filter, cv::Mat& output)
 {
@@ -180,6 +181,7 @@ void ImageProcessor::correlationFilter(cv::Mat& im, cv::Mat& filter, cv::Mat& ou
 
 /* Initialize first images and the roi based on groundtruth
 	@params: path to file
+	@TODO: redundant
 */
 void ImageProcessor::initializeImages(std::string filename)
 {
@@ -207,6 +209,7 @@ void ImageProcessor::initializeImages(std::string filename)
 
 /*	Set current image from teh given filename
 	@param: path to file
+	@TODO: redundant
 */
 void ImageProcessor::setCurrentImage(std::string filename)
 {
@@ -215,6 +218,9 @@ void ImageProcessor::setCurrentImage(std::string filename)
 
 }
 
+/*
+	@TODO: redundant
+*/
 
 void ImageProcessor::initializeFilter(cv::Mat& y)
 {
@@ -493,8 +499,6 @@ void ImageProcessor::run()
 	
 	readDir(); // read all data and store it to dictionary
 
-
-
 	// initialize parameters used in multiple iterations
 	cv::Mat prev_img, curr_img;
 	//ModelH h_hat;
@@ -528,7 +532,7 @@ void ImageProcessor::run()
 			std::cout << "prepocessing input image "<< std::endl;
 			preprocessImg(resizedImg);
 
-			//computeH(resizedImg, curr_h_hat);
+			
 			std::cout<< "computing DFT" << std::endl;
 			computeDFT(resizedImg, phi_hat);
 			//showDFT(phi_hat);
@@ -546,6 +550,9 @@ void ImageProcessor::run()
 		else
 		{
 			curr_img = cv::imread(it.second, CV_LOAD_IMAGE_COLOR);
+			CV_Assert(curr_img.channels() == 1 || curr_img.channels() == 3);
+
+
 			Position new_p;
 			new_p.x = _p.x-(_p.w/2);
 			new_p.y = _p.y - (_p.h/2);
@@ -581,9 +588,7 @@ void ImageProcessor::run()
 			cv::dft(phi_hat_resp, phi, DFT_INVERSE | DFT_REAL_OUTPUT);
 			cv::normalize(phi, phi, 0.0, 255.0, NORM_MINMAX);
 			showImage(phi);
-			// resize 
-			//cv::resize(phi,phi, cv::Size(_p.w, _p.h));
-			//cv::Point maxLoc;
+			
 			cv::minMaxLoc(phi, NULL, NULL, NULL, &max_loc);
 			int xd = max_loc.x - cx ;
 			int yd = max_loc.y - cy;
@@ -615,13 +620,3 @@ void ImageProcessor::run()
 
 }
 
-int main(int argc, char **argv)
-{
-	ImageProcessor processor;
-
-	// processor.initializeImages("../vot15_car1/imgs/00000001.jpg");
-	// processor.setCurrentImage("../vot15_car1/imgs/00000002.jpg");
-	processor.run();
-
-	return 0;
-}

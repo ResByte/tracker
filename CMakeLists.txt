@@ -3,7 +3,16 @@ PROJECT( opencv_test )
 set(CMAKE_CXX_FLAGS "-std=c++11")
 FIND_PACKAGE(OpenCV REQUIRED)
 FIND_PACKAGE(Boost COMPONENTS system filesystem )
-INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
+INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS} include)
 
-ADD_EXECUTABLE( image_processor src/image_processor.cpp )
-TARGET_LINK_LIBRARIES(image_processor ${OpenCV_LIBS} ${Boost_LIBRARIES})
+
+
+add_library(proj_libs
+	src/image_processor.cpp
+)
+
+target_link_libraries(proj_libs ${OpenCV_LIBS} ${Boost_LIBRARIES})
+
+
+ADD_EXECUTABLE( tracker src/tracker.cpp )
+TARGET_LINK_LIBRARIES(tracker proj_libs )
