@@ -47,6 +47,15 @@
 #include <boost/range.hpp>
 
 
+
+struct Parameters
+{
+	int fixed_patch_size = 150;
+	double lambda = static_cast<double>(0.01);
+	double templ_eta = static_cast<double>(0.01);
+
+};
+
 class ImageProcessor
 {
 public:
@@ -77,11 +86,11 @@ public:
 		cv::Mat s;	// s_hat in freq domain
 	};
 
-	ImageProcessor()
+	ImageProcessor(Parameters param)
 	{
-		_fixed_patch_size = 150;
-		_reg_param = 0.01;
-		_templ_learning_rate = 0.01;
+		_fixed_patch_size = param.fixed_patch_size;
+		_reg_param = param.lambda;
+		_templ_learning_rate = param.templ_eta;
 		_p.x = 243;
 		_p.y = 165;
 		_p.w = 110;

@@ -3,7 +3,8 @@
 
 int main(int argc, char **argv)
 {
-	ImageProcessor processor;
+	Parameters param;
+	ImageProcessor processor(param);
 
 	//starts the process
 	processor.run();

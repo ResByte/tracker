@@ -501,8 +501,7 @@ void ImageProcessor::run()
 
 	// initialize parameters used in multiple iterations
 	cv::Mat prev_img, curr_img;
-	//ModelH h_hat;
-	ModelH curr_h_hat;
+	cv::Mat h_hat;
 	cv::Mat phi_hat;
 	cv::Mat h_hat_num;
 	cv::Mat h_hat_den;
@@ -518,6 +517,8 @@ void ImageProcessor::run()
 	cv::Mat y_hat;
 	cv::dft(y,y_hat, cv::DFT_COMPLEX_OUTPUT );
 	//showDFT(y_hat);
+
+
 	// main loop 
 	for( auto it : _data_map)
 	{
@@ -543,7 +544,7 @@ void ImageProcessor::run()
 			// initialize position
 			cx = _fixed_patch_size/2;
 			cy = _fixed_patch_size/2;
-
+			prev_img = curr_img.clone();
 			//curr_img.copyTo(prev_img);
 
 		}
@@ -552,7 +553,7 @@ void ImageProcessor::run()
 			curr_img = cv::imread(it.second, CV_LOAD_IMAGE_COLOR);
 			CV_Assert(curr_img.channels() == 1 || curr_img.channels() == 3);
 
-
+			// initialize position of patch
 			Position new_p;
 			new_p.x = _p.x-(_p.w/2);
 			new_p.y = _p.y - (_p.h/2);
@@ -575,7 +576,7 @@ void ImageProcessor::run()
 			lambda = _reg_param*lambda;
 			h_hat_den += lambda;
 			// compute over filter 
-			cv::Mat h_hat;
+			//cv::Mat h_hat;
 			spectrumDiv(h_hat_num, h_hat_den, h_hat);
 
 			// convolve regularized filter with current image and compute ifft 
@@ -615,7 +616,7 @@ void ImageProcessor::run()
 			// compute max location
 
 			//showDFT(h_hat);
-
+			prev_img = curr_img.clone();
 			
 		}
 	}
