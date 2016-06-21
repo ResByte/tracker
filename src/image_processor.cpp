@@ -608,53 +608,7 @@ void ImageProcessor::run()
 
 			//showDFT(h_hat);
 
-			/*
-			// apply hann window before 
-			cv::Mat hann;
-			cv::createHanningWindow(hann, cv::Size(_fixed_patch_size, _fixed_patch_size), CV_32F);
-			hann.convertTo(hann, CV_32FC1, 1/255.0);
-
-			cv::Mat phi; // feature image (currently grayscale image)
-			cv::cvtColor(resizedImg, phi, CV_RGB2GRAY);
-			cv::equalizeHist(phi, phi); // histogram equaizer for more contrast in image features
-			phi.convertTo(phi, CV_32FC1,1/255.0 );
-
-			//apply hann window before fourier transform
-			//cv::multiply(phi, hann, phi);
-			phi = phi*hann;
-			//showImage(phi);
-			// take fourier transform of feature image
-			cv::Mat phi_hat;
-			cv::dft(phi,phi_hat, cv::DFT_COMPLEX_OUTPUT );
-
-			// compute filter 
-			//cv::Mat h = (1/(cv::trace(curr_h_hat.s)[0] + 1e-3))*curr_h_hat.r;
-			std::cout<< cv::trace(curr_h_hat.s)<<std::endl;
-			std::vector<cv::Mat> components;
-			cv::split(curr_h_hat.r, components);
-			//cv::Mat h_real = components[0];
-			components[0] = (1/(cv::trace(curr_h_hat.s)[0] +1e-3))*components[0];
-			//cv::Mat h_imag = components[1];
-			components[1] = (1/(cv::trace(curr_h_hat.s)[1] + 1e-3))*components[1];
-			cv::Mat h;
-			cv::merge(components,h);
-
-			// compute response in frequency domain	
-			cv::Mat response_hat;
-			cv::mulSpectrums(h, phi_hat, response_hat,0,true);	
-			std::cout<< h.size()<< ", "<< h.type()<<std::endl;
-			//showResponseImage(response_hat);
-			//showResponseImage(response_hat);
-			cv::Mat res;
-			cv::idft(response_hat,res, cv::DFT_SCALE | cv::DFT_REAL_OUTPUT);
-			std::cout<< res.size()<< ", "<< res.type()<<std::endl;
-			cv::Point minLoc, maxLoc;
-			double minVal,maxVal;
-			cv::minMaxLoc(res, &minVal,&maxVal, &minLoc, &maxLoc);
-			std::cout<< minVal << ", "<< maxVal<< ", " << std::endl;
-			//showImage(res);
-			//computeH(resizedImg, curr_h_hat);
-			*/
+			
 		}
 	}
 
