@@ -31,7 +31,7 @@ In the current version, Template filter based on discriminative correlation filt
 
 
 ## Warnings 
-* Compiler should support c++11 flags. 
+* Compiler should support c++11. 
 * Tested only on Unix/Linux systems
 
 ## TODO

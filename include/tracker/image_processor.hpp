@@ -72,7 +72,7 @@ public:
 		// initialize scale filter parameters
 		_scale_learning_rate = s_param.learning_rate;
 		_scale_sigma_factor = s_param.sigma_factor;
-		_num_scales = s_param._num_scales;
+		_num_scales = s_param.num_scales;
 		_scale_model_factor = s_param.model_factor;
 		_scale_step = s_param.scale_step;
 		_scale_model_max_area = s_param.model_max_area;
