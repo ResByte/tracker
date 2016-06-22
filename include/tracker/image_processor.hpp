@@ -1,5 +1,3 @@
-#ifndef _IMAGE_PROCESSOR_HPP
-#define _IMAGE_PROCESSOR_HPP
 /*
  * image_processor.hpp
  *
@@ -22,7 +20,8 @@
  *
  *
  */
-
+#ifndef _IMAGE_PROCESSOR_HPP
+#define _IMAGE_PROCESSOR_HPP
 
 #include <iostream>
 #include <string>
@@ -42,9 +41,9 @@
 #include "boost/filesystem.hpp"
 #include "boost/filesystem/operations.hpp"
 #include "boost/filesystem/path.hpp"
-#include <boost/filesystem/convenience.hpp>
-#include <boost/foreach.hpp>
-#include <boost/range.hpp>
+#include "boost/filesystem/convenience.hpp"
+#include "boost/foreach.hpp"
+#include "boost/range.hpp"
 #include "tracker/parameters.hpp"
 
 
