@@ -36,6 +36,7 @@ In the current version, Template filter based on discriminative correlation filt
 
 ## TODO
 
+* Create evaluation tools for correlation filter.
 * Add Scale tracker to estimate scale of the object robustly. 
 * Use HOG features for making it more robust. 
 

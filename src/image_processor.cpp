@@ -439,6 +439,7 @@ void ImageProcessor::run()
 	cv::Mat prev_img, curr_img;
 	cv::Mat h_hat;
 	cv::Mat phi_hat;
+	cv::Mat translation_resp;
 	cv::Mat h_hat_num;
 	cv::Mat h_hat_den;
 	int cx, cy; // postion of the object center
@@ -514,29 +515,34 @@ void ImageProcessor::run()
 			cv::Mat lambda = cv::Mat::eye(h_hat_den.size(), h_hat_den.type());
 			lambda = _reg_param*lambda;
 			h_hat_den += lambda;
+
 			// compute over filter 
 			//cv::Mat h_hat;
-			spectrumDiv(h_hat_num, h_hat_den, h_hat);
+			//spectrumDiv(h_hat_num, h_hat_den, h_hat);
 
-			// convolve regularized filter with current image and compute ifft 
+			// h_hat_num*predicted_patch _hat 
+			cv::Mat response_hat_num;
+			cv::mulSpectrums(h_hat_num, phi_hat,response_hat_num, true);
+
+			// divide num / h_hat_den = translation response
 			cv::Mat phi_hat_resp;
-			convolveDFT(phi_hat, h_hat, phi_hat_resp);
-
-			// compute max loc
-			 cv::Point max_loc;
-			// cv::minMaxLoc(phi_hat, NULL, NULL, NULL, &maxLoc);
+			spectrumDiv(response_hat_num,h_hat_den, phi_hat_resp);
+			
 
 			// compute inverse fourier transform
 			cv::Mat phi;
 			cv::dft(phi_hat_resp, phi, cv::DFT_INVERSE | cv::DFT_REAL_OUTPUT);
-			cv::normalize(phi, phi, 0.0, 255.0, cv::NORM_MINMAX);
-			showImage(phi);
-			
-			cv::minMaxLoc(phi, NULL, NULL, NULL, &max_loc);
-			int xd = max_loc.x - cx ;
-			int yd = max_loc.y - cy;
+			//cv::normalize(phi, phi, 0.0, 255.0, cv::NORM_MINMAX);
+			cv::resize(phi, phi, cv::Size(_p.w,_p.h), 0,0, cv::INTER_CUBIC );
+			//showImage(phi);
 
-			std::cout<< max_loc.x<< ", "<< max_loc.y<< std::endl;
+			double maxVal;
+			cv::Point max_loc;
+			cv::minMaxLoc(phi, NULL, &maxVal, NULL, &max_loc);
+			int xd = max_loc.x + 1 - static_cast<int>(phi.cols/2.0);
+			int yd = max_loc.y + 1 - static_cast<int>(phi.rows/2.0);
+
+			std::cout<< xd<< ", "<< yd<< std::endl;
 
 			// filter update 
 			cv::Mat new_h_hat_num;
@@ -548,11 +554,19 @@ void ImageProcessor::run()
 			h_hat_den = (1-_templ_learning_rate)*h_hat_den + _templ_learning_rate*new_h_hat_den;
 
 			// update rect position
-			_p.x +=xd;
-			_p.y +=yd;
+			_p.x += xd;
+			_p.y += yd;
 			cx += xd;
 			cy += yd; 
-			// compute max location
+			cv::Rect box;
+			box.width = _p.w;
+			box.height = _p.h;
+			box.x = _p.x;
+			box.y = _p.y;
+
+			// display image with rectangle
+			cv::rectangle(curr_img, box, cv::Scalar(0,0,255) );
+			showImage(curr_img);
 
 			//showDFT(h_hat);
 			prev_img = curr_img.clone();
