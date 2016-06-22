@@ -32,7 +32,12 @@ In the current version, Template filter based on discriminative correlation filt
 
 ## Warnings 
 * Compiler should support c++11. 
-* Tested only on Unix/Linux systems
+* Tested only on Linux systems
+
+## Performance
+
+Tracker parameters are fixed as in the paper. Using only translation based tracker, performance is not upto mark. Tracker tracks robustly for initial few frames but after recieving distorted images, tracker loses the object and only in last few frames tracker is able to track given object again.
+
 
 ## TODO
 
