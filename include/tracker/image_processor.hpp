@@ -45,16 +45,10 @@
 #include <boost/filesystem/convenience.hpp>
 #include <boost/foreach.hpp>
 #include <boost/range.hpp>
+#include "tracker/parameters.hpp"
 
 
 
-struct Parameters
-{
-	int fixed_patch_size = 150;
-	double lambda = static_cast<double>(0.01);
-	double templ_eta = static_cast<double>(0.01);
-
-};
 
 class ImageProcessor
 {
