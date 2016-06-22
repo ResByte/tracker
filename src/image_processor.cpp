@@ -22,7 +22,7 @@
  */
 
 
- 
+
 #include "tracker/image_processor.hpp"
 
 /*	reesizes image to fixed size
@@ -427,6 +427,8 @@ void ImageProcessor::spectrumDiv(cv::Mat& a, cv::Mat& b, cv::Mat& out)
 }
 
 
+
+
 // runs algorithm
 void ImageProcessor::run()
 {
@@ -478,6 +480,9 @@ void ImageProcessor::run()
 			// initialize position
 			cx = _fixed_patch_size/2;
 			cy = _fixed_patch_size/2;
+
+			// initialize scale estimation
+
 			prev_img = curr_img.clone();
 			//curr_img.copyTo(prev_img);
 

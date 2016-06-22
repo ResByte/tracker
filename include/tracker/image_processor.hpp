@@ -63,11 +63,20 @@ public:
 
 
 
-	ImageProcessor(Parameters param)
+	ImageProcessor(Parameters param, ScaleParameters s_param)
 	{
 		_fixed_patch_size = param.fixed_patch_size;
 		_reg_param = param.lambda;
 		_templ_learning_rate = param.templ_eta;
+
+		// initialize scale filter parameters
+		_scale_learning_rate = s_param.learning_rate;
+		_scale_sigma_factor = s_param.sigma_factor;
+		_num_scales = s_param._num_scales;
+		_scale_model_factor = s_param.model_factor;
+		_scale_step = s_param.scale_step;
+		_scale_model_max_area = s_param.model_max_area;
+
 		_p.x = 243;
 		_p.y = 165;
 		_p.w = 110;
@@ -142,17 +151,21 @@ public:
 	void computeDFT(cv::Mat& in, cv::Mat& out);
 
 	std::map<int, std::string> _data_map;
+	Position _p;
+	// template parameters
 	float _reg_param;
 	float _templ_learning_rate;
-	Position _p;
-	// Target _prev_pos;
-	// Target _curr_pos;
-	// Scale _prev_scale;
-	// Scale _curr_scale;
-	//ModelH _prev_h;
-	//ModelH _curr_h;
 	int _fixed_patch_size; // every patch is resized to this before computing features
-	std::string _filename;
+	//std::string _filename;
+
+	// scale tracker parameters 
+	double _scale_learning_rate;
+	double _scale_sigma_factor;
+	int _num_scales;
+	double _scale_model_factor;
+	double _scale_step;
+	int _scale_model_max_area;
+
 	cv::Mat _prev_image;
 	cv::Mat _curr_image;
 	cv::Mat _prev_roi;

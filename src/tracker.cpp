@@ -28,7 +28,8 @@
 int main(int argc, char **argv)
 {
 	Parameters param;
-	ImageProcessor processor(param);
+	ScaleParameters s_param;
+	ImageProcessor processor(param, s_param);
 
 	//starts the process
 	processor.run();
