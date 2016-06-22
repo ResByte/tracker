@@ -68,23 +68,7 @@ public:
 		int h;	// height of the frame
 	};
 
-	struct Target
-	{
-		int x;
-		int y;
-	};
 
-	struct Scale
-	{
-		int w;
-		int h;
-	};
-
-	struct ModelH
-	{
-		cv::Mat r; 	// r_hat in freq domain
-		cv::Mat s;	// s_hat in freq domain
-	};
 
 	ImageProcessor(Parameters param)
 	{
@@ -107,9 +91,6 @@ public:
 	//resize image to fixed size
 	void resizeImg(cv::Mat& in, cv::Mat& out);
 
-	// create gaussian kernel
-	cv::Mat createGaussian();
-
 	// displays image untill shutdown
 	void showImage(cv::Mat im);
 
@@ -119,11 +100,6 @@ public:
 	// pre-process input image
 	void preprocessImg(cv::Mat& img);
 
-	//sets filename
-	void setFileName(std::string name);
-
-	// set previous image
-	void initializeImages(std::string filename);
 
 	// set current Image from file
 	void setCurrentImage(std::string filename);
@@ -161,8 +137,7 @@ public:
 	// divides 2 spectrum in frequency domain
 	void spectrumDiv(cv::Mat& a, cv::Mat& b, cv::Mat& out);
 
-	// computes model h
-	void computeH(cv::Mat& img, ModelH& h_result);
+	
 
 	// compute inverse of matrix having imaginery components
 	void getComplexInverse(cv::Mat& in, cv::Mat& out);
@@ -177,12 +152,12 @@ public:
 	float _reg_param;
 	float _templ_learning_rate;
 	Position _p;
-	Target _prev_pos;
-	Target _curr_pos;
-	Scale _prev_scale;
-	Scale _curr_scale;
-	ModelH _prev_h;
-	ModelH _curr_h;
+	// Target _prev_pos;
+	// Target _curr_pos;
+	// Scale _prev_scale;
+	// Scale _curr_scale;
+	//ModelH _prev_h;
+	//ModelH _curr_h;
 	int _fixed_patch_size; // every patch is resized to this before computing features
 	std::string _filename;
 	cv::Mat _prev_image;

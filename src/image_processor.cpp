@@ -7,12 +7,7 @@ void ImageProcessor::resizeImg(cv::Mat& in, cv::Mat& out)
 {
 	cv::resize(in, out, cv::Size(_fixed_patch_size,_fixed_patch_size), 0,0, cv::INTER_CUBIC );
 }
-// creates a gaussian kernel as defined in opencv 
-cv::Mat ImageProcessor::createGaussian()
-{
-	cv::Mat result = cv::getGaussianKernel(51, 0.01, CV_32F);
-	return result;
-}
+
 
 /* 	computes hog feature from the given image
 	@params: greyscale image as input
@@ -74,13 +69,6 @@ void ImageProcessor::readImage(std::string filename)
 	_curr_image  = cv::imread(filename, CV_LOAD_IMAGE_COLOR);
 }
 
-/*	set global filename of the input image
-	@params: input image filename with path
-*/
-void ImageProcessor::setFileName(std::string name)
-{
-	_filename = name;
-}
 
 
 /* 	convolves 2 input images in frequency domain
@@ -179,33 +167,6 @@ void ImageProcessor::correlationFilter(cv::Mat& im, cv::Mat& filter, cv::Mat& ou
 	convolveDFT(im, filter,output);
 }
 
-/* Initialize first images and the roi based on groundtruth
-	@params: path to file
-	@TODO: redundant
-*/
-void ImageProcessor::initializeImages(std::string filename)
-{
-	_prev_image = cv::imread(filename, CV_LOAD_IMAGE_COLOR);
-	cv::Mat window;
-	extractRect(_prev_image, window, 243,165,110 ,115);
-	cv::Mat resizedImg;
-	resizeImg(window,resizedImg);
-	//showImage(resizedImg);
-	_prev_roi = resizedImg;
-
-	// initialize position
-	_p.x = 243;
-	_p.y = 165;
-	_p.w = 128;
-	_p.h = 128;
-
-	_prev_pos.x = 243 +115/2;
-	_prev_pos.y = 165 + 110/2;
-	// initialize scale
-	_prev_scale.w = 110;
-	_prev_scale.h = 115;
-
-}
 
 /*	Set current image from teh given filename
 	@param: path to file
@@ -255,58 +216,6 @@ void ImageProcessor::getComplexInverse(cv::Mat& in, cv::Mat& out)
 	result.copyTo(out);
 }
 
-/*	computes model H for the image
-	this is minimiser of the regularised objective
-	@params: precessed input patch.
-*/
-
-void ImageProcessor::computeH(cv::Mat& img, ModelH& h_result)
-{
-
-	/* initialize with first frame */
-	//	extract patch x to a fixed size
-	cv::Mat resizedImg;
-	img.copyTo(resizedImg);
-
-	// 	create Hanning window
-	cv::Mat hann;
-	cv::createHanningWindow(hann, cv::Size(_fixed_patch_size, _fixed_patch_size), CV_32F);
-	hann.convertTo(hann, CV_32FC1, 1/255.0);
-
-	// create desired output response y
-	cv::Mat y = cv::Mat::zeros(_fixed_patch_size, _fixed_patch_size, CV_32FC1);
-	y.at<float>(_fixed_patch_size/2, _fixed_patch_size/2) = 1.0f;
-	cv::GaussianBlur(y,y, cv::Size(-1,-1),_fixed_patch_size/16,0);
-	cv::normalize(y,y,cv::NORM_MINMAX);
-
-	// compute dft for desired output response y
-	cv::Mat y_hat;
-	cv::dft(y,y_hat, cv::DFT_COMPLEX_OUTPUT );
-
-	// compute greyscale feature image
-	cv::Mat phi; // feature image (currently grayscale image)
-	cv::cvtColor(resizedImg, phi, CV_RGB2GRAY);
-	cv::equalizeHist(phi, phi); // histogram equaizer for more contrast in image features
-	phi.convertTo(phi, CV_32FC1,1/255.0 );
-
-	//apply hann window before fourier transform
-	phi = phi*hann;
-
-	// take fourier transform of feature image
-	cv::Mat phi_hat;
-	cv::dft(phi,phi_hat, cv::DFT_COMPLEX_OUTPUT );
-
-	// multiply the spectrums to calculate r_hat(numerator) of model
-	cv::Mat r_hat;
-	cv::mulSpectrums(y_hat, phi_hat, r_hat,0,true);
-
-	// multiply the spectrums to calculate s_hat
-	cv::Mat s_hat;
-	cv::mulSpectrums(phi_hat,phi_hat, s_hat, 0, true);
-
-	r_hat.copyTo(h_result.r);
-	s_hat.copyTo(h_result.s);
-}
 
 /*	Creates Training samples by randomly rotating image
 	Used in MOSSE tracker
