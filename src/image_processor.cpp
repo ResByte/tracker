@@ -338,7 +338,7 @@ void ImageProcessor::readDir()
 {
 	BOOST_FOREACH(boost::filesystem::path path,
             boost::make_iterator_range(
-                boost::filesystem::recursive_directory_iterator(boost::filesystem::path("../vot15_car1/imgs")),
+                boost::filesystem::recursive_directory_iterator(boost::filesystem::path("../vot15_car1/imgs/")),
                 boost::filesystem::recursive_directory_iterator()))
 	{
         std::string s =  path.filename().string();
@@ -495,10 +495,10 @@ void ImageProcessor::run()
 
 			// initialize position of patch
 			Position new_p;
-			new_p.x = _p.x-(_p.w/2);
-			new_p.y = _p.y - (_p.h/2);
-			new_p.w = 2*_p.w;
-			new_p.h = 2*_p.h;
+			new_p.x = _p.x ;
+			new_p.y = _p.y ;
+			new_p.w = _p.w;
+			new_p.h = _p.h;
 
 			// extract patch and resize it to a fixed size
 			cv::Mat resizedImg  = extractPatch(curr_img, new_p);
@@ -532,7 +532,7 @@ void ImageProcessor::run()
 			// compute inverse fourier transform
 			cv::Mat phi;
 			cv::dft(phi_hat_resp, phi, cv::DFT_INVERSE | cv::DFT_REAL_OUTPUT);
-			//cv::normalize(phi, phi, 0.0, 255.0, cv::NORM_MINMAX);
+			cv::normalize(phi, phi, 0.0, 255.0, cv::NORM_MINMAX);
 			cv::resize(phi, phi, cv::Size(_p.w,_p.h), 0,0, cv::INTER_CUBIC );
 			//showImage(phi);
 
@@ -542,7 +542,17 @@ void ImageProcessor::run()
 			int xd = max_loc.x + 1 - static_cast<int>(phi.cols/2.0);
 			int yd = max_loc.y + 1 - static_cast<int>(phi.rows/2.0);
 
-			std::cout<< xd<< ", "<< yd<< std::endl;
+			//std::cout<< xd<< ", "<< yd<< std::endl;
+
+			// evaluate response results using PSR from DSST code
+			cv::Mat side_lobe = phi.clone();
+			side_lobe.setTo(0, side_lobe < 0);
+			cv::rectangle(side_lobe, cv::Point(max_loc.x - 1,max_loc.y - 1),
+							cv::Point(max_loc.x + 1, max_loc.y + 1), cv::Scalar(0), CV_FILLED);
+			cv::Scalar mean, std_dev;
+			cv::meanStdDev(side_lobe,mean, std_dev);
+			double psrVal = (maxVal - mean[0]) / (std_dev[0] + std::numeric_limits<double>::epsilon());
+			std::cout<< "psrVal for this frame: "<<psrVal<<std::endl;
 
 			// filter update 
 			cv::Mat new_h_hat_num;
@@ -554,10 +564,13 @@ void ImageProcessor::run()
 			h_hat_den = (1-_templ_learning_rate)*h_hat_den + _templ_learning_rate*new_h_hat_den;
 
 			// update rect position
-			_p.x += xd;
-			_p.y += yd;
-			cx += xd;
-			cy += yd; 
+			if((_p.x +xd+_p.w) < curr_img.cols  && (_p.y + yd + _p.h)< curr_img.rows)
+			{ 
+				_p.x += xd;
+			  	_p.y += yd;
+			} 
+			//cx += xd;
+			//cy += yd; 
 			cv::Rect box;
 			box.width = _p.w;
 			box.height = _p.h;
