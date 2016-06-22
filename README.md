@@ -28,11 +28,17 @@ In the current version, Template filter based on discriminative correlation filt
 * `cmake ..`
 * `make`
 * `./tracker`
-
+* frame with car (surrounded by ractangular box is displayed)
+* click on the image frame and press any key to update to next data frames.
 
 ## Warnings 
+
 * Compiler should support c++11. 
 * Tested only on Linux systems
+
+## Results
+
+* Results are displayed as rectangular box surrounding target object. 
 
 ## Performance
 
